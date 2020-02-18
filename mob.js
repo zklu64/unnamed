@@ -1,5 +1,9 @@
-function enemy(type, start){
-  this.firstname = fname;
-  this.lastname = lname;
-  this.direction = 0;
-}
+define([], function () {
+    var returnedMob = function (type, start) {
+        this.type = type;
+        this.tile = start;
+        this.dir = 0;
+    };
+
+    return returnedMob;
+});

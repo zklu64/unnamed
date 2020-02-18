@@ -44,7 +44,14 @@ function parseMapData(){
   }
   widthPerTile = (cwidth / col);
   heightPerTile = (cheight / row);
-  printMap(mapData)
+  //printMap(mapData)
+
+  //setup mobs and shop here before going into draw loop
+  require(['mob'], function(m){
+      var enemy = new m("beginner", [0, 1]);
+      alert(enemy.type);
+  });
+
   draw();
 }
 
@@ -58,6 +65,7 @@ function loadLevel(stageNum)
 
 loadLevel(1);
 
+/*
 function printMap(map)
 {
   for (let i = 0; i < map.length; ++i) {
@@ -68,3 +76,4 @@ function printMap(map)
     console.log(output);
   }
 }
+*/
