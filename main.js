@@ -14,81 +14,57 @@ path1.src = "assets/path.jpg";
 
 const cwidth = canvas.offsetWidth;
 const cheight = canvas.offsetHeight;
-let instances = 20;
-let widthPerTile = cwidth / instances;
-let heightPerTile = cheight / instances;
-
-function errorHandler(e) {
-  var msg = '';
-
-  switch (e.code) {
-    case FileError.QUOTA_EXCEEDED_ERR:
-      msg = 'QUOTA_EXCEEDED_ERR';
-      break;
-    case FileError.NOT_FOUND_ERR:
-      msg = 'NOT_FOUND_ERR';
-      break;
-    case FileError.SECURITY_ERR:
-      msg = 'SECURITY_ERR';
-      break;
-    case FileError.INVALID_MODIFICATION_ERR:
-      msg = 'INVALID_MODIFICATION_ERR';
-      break;
-    case FileError.INVALID_STATE_ERR:
-      msg = 'INVALID_STATE_ERR';
-      break;
-    default:
-      msg = 'Unknown Error';
-      break;
-  };
-
-  console.log('Error: ' + msg);
-}
-
-function onInitFs(fs) {
-  fs.root.getFile('assets/s1.txt', {}, function(fileEntry) {
-
-    // Get a File object representing the file,
-    // then use FileReader to read its contents.
-    fileEntry.file(function(file) {
-       var reader = new FileReader();
-
-       reader.onloadend = function(e) {
-         var txtArea = document.createElement('textarea');
-         txtArea.value = this.result;
-         document.body.appendChild(txtArea);
-       };
-
-       reader.readAsText(file);
-    }, errorHandler);
-
-  }, errorHandler);
-}
-
-window.storageInfo.requestQuota(TEMPORARY, 1024*1024,
-    function(grantedBytes) {
-        window.requestFileSystem(window.TEMPORARY, grantedBytes, onInitFs, errorHandler);
-    },
-    errorHandler
-);
+var row; //how many tiles in a row, determined by level
+var col; //how many tiles in a column
+var widthPerTile;
+var heightPerTile;
+var mapData = [];
 
 function draw() {
-  for (i = 0; i < instances; i++) {
-    for (j = 0; j < instances; j++) {
-      ctx.drawImage(grass, widthPerTile*j, heightPerTile*i, widthPerTile-1, heightPerTile-1);
+  for (let i = 0; i < row; i++) {
+    for (let j = 0; j < col; j++) {
+      if (mapData[i][j] == '1' || mapData[i][j] == 'x') {
+        ctx.drawImage(path1, widthPerTile*j, heightPerTile*i, widthPerTile-1, heightPerTile-1);
+      } else {
+        ctx.drawImage(grass, widthPerTile*j, heightPerTile*i, widthPerTile-1, heightPerTile-1);
+      }
     }
   }
-  ctx.drawImage(trash1, 0, 0);
+  ctx.drawImage(trash1, 0, 0, widthPerTile-1, heightPerTile-1);
   requestAnimationFrame(draw);
 }
 
-function readTextFile(file)
-{
-  var request = new XMLHttpRequest();
-  request.open("GET", file, true);
-  request.send(null);
-  var returnValue = request.responseText;
-  return returnValue;
+function parseMapData(){
+  mapData = [];
+  let data = this.responseText.split("\n");
+  row = parseInt(data[0].split(/[ ,]+/)[0]);
+  col = parseInt(data[0].split(/[ ,]+/)[1]);
+  for (let i = 1; i <= row; ++i) {
+    mapData.push(data[i].split(/[ ,]+/));
+  }
+  widthPerTile = (cwidth / col);
+  heightPerTile = (cheight / row);
+  printMap(mapData)
+  draw();
 }
 
-draw();
+function loadLevel(stageNum)
+{
+  var request = new XMLHttpRequest();
+  request.addEventListener("load", parseMapData);
+  request.open("GET", `assets/s${stageNum}.txt`);
+  request.send();
+}
+
+loadLevel(1);
+
+function printMap(map)
+{
+  for (let i = 0; i < map.length; ++i) {
+    let output = "";
+    for (let j = 0; j < map[i].length; ++j) {
+      output += map[i][j];
+    }
+    console.log(output);
+  }
+}
