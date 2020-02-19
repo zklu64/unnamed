@@ -3,6 +3,8 @@ define([], function () {
         this.type = type;
         this.tile = start;
         this.dir = 0;
+        this.health = 100;
+        this.def = 0;
     };
 
     return returnedMob;

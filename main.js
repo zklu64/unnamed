@@ -19,18 +19,30 @@ var col; //how many tiles in a column
 var widthPerTile;
 var heightPerTile;
 var mapData = [];
+var startTile;
+var enemies = [];
+
+/*
+abstracted function to draw images to game grid
+*/
+function drawToGrid(img, x, y) {
+  ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
+}
 
 function draw() {
   for (let i = 0; i < row; i++) {
     for (let j = 0; j < col; j++) {
-      if (mapData[i][j] == '1' || mapData[i][j] == 'x') {
-        ctx.drawImage(path1, widthPerTile*j, heightPerTile*i, widthPerTile-1, heightPerTile-1);
+      if (mapData[i][j] == '0' || mapData[i][j] == '0\r') {
+        drawToGrid(grass, j, i);
       } else {
-        ctx.drawImage(grass, widthPerTile*j, heightPerTile*i, widthPerTile-1, heightPerTile-1);
+        drawToGrid(path1, j, i);
       }
     }
   }
-  ctx.drawImage(trash1, 0, 0, widthPerTile-1, heightPerTile-1);
+  enemies.forEach((item, i) => {
+    drawToGrid(trash1, item.tile[1], item.tile[0]);
+  });
+
   requestAnimationFrame(draw);
 }
 
@@ -41,15 +53,18 @@ function parseMapData(){
   col = parseInt(data[0].split(/[ ,]+/)[1]);
   for (let i = 1; i <= row; ++i) {
     mapData.push(data[i].split(/[ ,]+/));
+    let startTileInd = mapData[i-1].indexOf('s');
+    if (startTileInd != -1) startTile = [i-1, startTileInd];
   }
   widthPerTile = (cwidth / col);
   heightPerTile = (cheight / row);
   //printMap(mapData)
 
   //setup mobs and shop here before going into draw loop
-  require(['mob'], function(m){
-      var enemy = new m("beginner", [0, 1]);
-      alert(enemy.type);
+  require(['mob'], function(m) {
+    for (let i = 1; i <= 20; ++i) {
+      enemies.push(new m("tutorial", startTile));
+    }
   });
 
   draw();
@@ -65,7 +80,7 @@ function loadLevel(stageNum)
 
 loadLevel(1);
 
-/*
+
 function printMap(map)
 {
   for (let i = 0; i < map.length; ++i) {
@@ -76,4 +91,3 @@ function printMap(map)
     console.log(output);
   }
 }
-*/
