@@ -20,6 +20,7 @@ var widthPerTile;
 var heightPerTile;
 var mapData = [];
 var startTile;
+var startDirection = [0,0];
 var enemies = [];
 
 /*
@@ -30,6 +31,8 @@ function drawToGrid(img, x, y) {
 }
 
 function draw() {
+  ctx.fillStyle = "white";
+  ctx.fillRect(0, 0, cwidth, cheight);
   for (let i = 0; i < row; i++) {
     for (let j = 0; j < col; j++) {
       if (mapData[i][j] == '0' || mapData[i][j] == '0\r') {
@@ -40,9 +43,10 @@ function draw() {
     }
   }
   enemies.forEach((item, i) => {
-    drawToGrid(trash1, item.tile[1], item.tile[0]);
+    drawToGrid(trash1, item.pos[1], item.pos[0]);
   });
-
+  enemies[19].pos[0] += enemies[19].dir[0];
+  enemies[19].pos[1] += enemies[19].dir[1];
   requestAnimationFrame(draw);
 }
 
@@ -51,11 +55,26 @@ function parseMapData(){
   let data = this.responseText.split("\n");
   row = parseInt(data[0].split(/[ ,]+/)[0]);
   col = parseInt(data[0].split(/[ ,]+/)[1]);
-  for (let i = 1; i <= row; ++i) {
-    mapData.push(data[i].split(/[ ,]+/));
-    let startTileInd = mapData[i-1].indexOf('s');
-    if (startTileInd != -1) startTile = [i-1, startTileInd];
-  }
+  require(['reIndexOf'], function(reIndexOf) {
+    for (let i = 1; i <= row; ++i) {
+      mapData.push(data[i].split(/[ ,]+/));
+      let startTileInd = reIndexOf(mapData[i-1], /s./);
+      if (startTileInd != -1) {
+        startTile = [i-1, startTileInd];
+        let dir = mapData[i-1][startTileInd][1];
+        if (dir == 'd') {
+          startDirection = [1, 0];
+        } else if (dir == 'u') {
+          startDirection = [-1, 0];
+        } else if (dir == 'l') {
+          startDirection = [0, -1];
+        } else if (dir == 'r') {
+          startDirection = [0, 1];
+        }
+      }
+    }
+  });
+
   widthPerTile = (cwidth / col);
   heightPerTile = (cheight / row);
   //printMap(mapData)
@@ -63,11 +82,10 @@ function parseMapData(){
   //setup mobs and shop here before going into draw loop
   require(['mob'], function(m) {
     for (let i = 1; i <= 20; ++i) {
-      enemies.push(new m("tutorial", startTile));
+      enemies.push(new m("tutorial", startTile, startDirection));
     }
+    draw();
   });
-
-  draw();
 }
 
 function loadLevel(stageNum)
