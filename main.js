@@ -42,22 +42,26 @@ function draw() {
       }
     }
   }
-  enemies.forEach((item, i) => {
-    drawToGrid(trash1, item.pos[1], item.pos[0]);
-  });
-  let ycord = Math.floor(enemies[19].pos[0]);
-  let xcord = Math.floor(enemies[19].pos[1]);
-  let dir = mapData[ycord][xcord].match(/[udlr]/);
-  if (dir != null) {
-      console.log(enemies[19].pos)
+  for (let i = enemies.length - 1; i >= 0; --i) {
+    //draw to canvas and update positions
+    drawToGrid(trash1, enemies[i].pos[1], enemies[i].pos[0]);
+    enemies[i].pos[0] += (enemies[i].dir[0] * 0.1 * i);
+    enemies[i].pos[1] += (enemies[i].dir[1] * 0.1 * i);
+    enemies[i].pos[0] = Number(enemies[i].pos[0].toPrecision(2));
+    enemies[i].pos[1] = Number(enemies[i].pos[1].toPrecision(2));
 
-    enemies[19].dir = mapDirection(dir[0]);
-  }
-  enemies[19].pos[0] += (enemies[19].dir[0] * 0.1);
-  enemies[19].pos[1] += (enemies[19].dir[1] * 0.1);
-  enemies[19].pos[0] = Number(enemies[19].pos[0].toPrecision(2));
-  enemies[19].pos[1] = Number(enemies[19].pos[1].toPrecision(2));
-  console.log(enemies[19].pos)
+    //check if mob needs to be removed
+    let ycord = Math.floor(enemies[i].pos[0]);
+    let xcord = Math.floor(enemies[i].pos[1]);
+    if (ycord < row && ycord >= 0 && xcord < col && xcord >= 0) {
+      let dir = mapData[ycord][xcord].match(/[udlr]/);
+      if (dir != null) {
+        enemies[i].dir = mapDirection(dir[0]);
+      }
+    } else {
+      enemies.splice(i,1);
+    }
+  };
   requestAnimationFrame(draw);
 }
 
@@ -79,7 +83,8 @@ function parseMapData(){
 
     //setup mobs and shop here before going into draw loop
     for (let i = 1; i <= 20; ++i) {
-      enemies.push(new mob("tutorial", startTile, startDirection));
+      let startTileCopy = startTile.slice();
+      enemies.push(new mob("tutorial", startTileCopy, startDirection));
     }
     draw();
   });
