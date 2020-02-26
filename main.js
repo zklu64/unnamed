@@ -45,8 +45,19 @@ function draw() {
   enemies.forEach((item, i) => {
     drawToGrid(trash1, item.pos[1], item.pos[0]);
   });
-  enemies[19].pos[0] += enemies[19].dir[0];
-  enemies[19].pos[1] += enemies[19].dir[1];
+  let ycord = Math.floor(enemies[19].pos[0]);
+  let xcord = Math.floor(enemies[19].pos[1]);
+  let dir = mapData[ycord][xcord].match(/[udlr]/);
+  if (dir != null) {
+      console.log(enemies[19].pos)
+
+    enemies[19].dir = mapDirection(dir[0]);
+  }
+  enemies[19].pos[0] += (enemies[19].dir[0] * 0.1);
+  enemies[19].pos[1] += (enemies[19].dir[1] * 0.1);
+  enemies[19].pos[0] = Number(enemies[19].pos[0].toPrecision(2));
+  enemies[19].pos[1] = Number(enemies[19].pos[1].toPrecision(2));
+  console.log(enemies[19].pos)
   requestAnimationFrame(draw);
 }
 
@@ -55,37 +66,39 @@ function parseMapData(){
   let data = this.responseText.split("\n");
   row = parseInt(data[0].split(/[ ,]+/)[0]);
   col = parseInt(data[0].split(/[ ,]+/)[1]);
-  require(['reIndexOf'], function(reIndexOf) {
+  require(['reIndexOf', 'mob'], function(reIndexOf, mob) {
     for (let i = 1; i <= row; ++i) {
       mapData.push(data[i].split(/[ ,]+/));
       let startTileInd = reIndexOf(mapData[i-1], /s./);
       if (startTileInd != -1) {
         startTile = [i-1, startTileInd];
         let dir = mapData[i-1][startTileInd][1];
-        if (dir == 'd') {
-          startDirection = [1, 0];
-        } else if (dir == 'u') {
-          startDirection = [-1, 0];
-        } else if (dir == 'l') {
-          startDirection = [0, -1];
-        } else if (dir == 'r') {
-          startDirection = [0, 1];
-        }
+        startDirection = mapDirection(dir);
       }
     }
+
+    //setup mobs and shop here before going into draw loop
+    for (let i = 1; i <= 20; ++i) {
+      enemies.push(new mob("tutorial", startTile, startDirection));
+    }
+    draw();
   });
 
   widthPerTile = (cwidth / col);
   heightPerTile = (cheight / row);
-  //printMap(mapData)
+}
 
-  //setup mobs and shop here before going into draw loop
-  require(['mob'], function(m) {
-    for (let i = 1; i <= 20; ++i) {
-      enemies.push(new m("tutorial", startTile, startDirection));
-    }
-    draw();
-  });
+function mapDirection(dir)
+{
+  if (dir == 'd') {
+    return [1, 0];
+  } else if (dir == 'u') {
+    return [-1, 0];
+  } else if (dir == 'l') {
+    return [0, -1];
+  } else if (dir == 'r') {
+    return [0, 1];
+  }
 }
 
 function loadLevel(stageNum)
