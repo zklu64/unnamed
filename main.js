@@ -1,19 +1,18 @@
-const canvas = document.getElementById('canvas');
-//TODO convert to css
-canvas.style = "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto;";
-const ctx = canvas.getContext('2d');
+var canvas;
+var ctx;
+var mouseState = {
+  x : 0,
+  y : 0,
+  selected : null,
+  clicked : null
+};
 
-var grass = new Image();
-grass.src = "assets/grass.png"
+var grass;
+var trash1;
+var path1;
 
-var trash1 = new Image();
-trash1.src = "assets/trash1.png";
-
-var path1 = new Image();
-path1.src = "assets/path.jpg";
-
-const cwidth = canvas.offsetWidth;
-const cheight = canvas.offsetHeight;
+var cwidth;
+var cheight;
 var row; //how many tiles in a row, determined by level
 var col; //how many tiles in a column
 var widthPerTile;
@@ -30,6 +29,7 @@ function drawToGrid(img, x, y) {
   ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
 }
 
+//main loop
 function draw() {
   ctx.fillStyle = "white";
   ctx.fillRect(0, 0, cwidth, cheight);
@@ -62,7 +62,23 @@ function draw() {
       enemies.splice(i,1);
     }
   };
+
+  //handle user interactions
+  if (mouseState.clicked != null) {
+    mapData[Math.floor(mouseState.clicked[1] / heightPerTile)][Math.floor(mouseState.clicked[0] / widthPerTile)] = '0';
+    mouseState.clicked = null;
+  }
+
   requestAnimationFrame(draw);
+}
+
+//get file from same source directory for stageNum
+function loadLevel(stageNum)
+{
+  var request = new XMLHttpRequest();
+  request.addEventListener("load", parseMapData);
+  request.open("GET", `assets/s${stageNum}.txt`);
+  request.send();
 }
 
 function parseMapData(){
@@ -70,6 +86,8 @@ function parseMapData(){
   let data = this.responseText.split("\n");
   row = parseInt(data[0].split(/[ ,]+/)[0]);
   col = parseInt(data[0].split(/[ ,]+/)[1]);
+  widthPerTile = (cwidth / col);
+  heightPerTile = (cheight / row);
   require(['reIndexOf', 'mob'], function(reIndexOf, mob) {
     for (let i = 1; i <= row; ++i) {
       mapData.push(data[i].split(/[ ,]+/));
@@ -88,9 +106,6 @@ function parseMapData(){
     }
     draw();
   });
-
-  widthPerTile = (cwidth / col);
-  heightPerTile = (cheight / row);
 }
 
 function mapDirection(dir)
@@ -106,16 +121,35 @@ function mapDirection(dir)
   }
 }
 
-function loadLevel(stageNum)
+window.onload = function()
 {
-  var request = new XMLHttpRequest();
-  request.addEventListener("load", parseMapData);
-  request.open("GET", `assets/s${stageNum}.txt`);
-  request.send();
+  canvas = document.getElementById('canvas');
+  //TODO convert to css
+  canvas.style = "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto;";
+  ctx = canvas.getContext('2d');
+  document.getElementById('canvas').addEventListener('click', function(e) {
+    let pos = getMouse(e);
+    mouseState.clicked = [pos.x, pos.y, 1];
+  });
+  grass = new Image();
+  grass.src = "assets/grass.png"
+  trash1 = new Image();
+  trash1.src = "assets/trash1.png";
+  path1 = new Image();
+  path1.src = "assets/path.jpg";
+  cwidth = canvas.offsetWidth;
+  cheight = canvas.offsetHeight;
+  loadLevel(1);
+  window.addEventListener('mousemove', getMouse, false);
 }
 
-loadLevel(1);
-
+function getMouse(e) {
+  let rect = canvas.getBoundingClientRect();
+  return {
+    x: e.clientX - rect.left,
+    y: e.clientY - rect.top
+  };
+}
 
 function printMap(map)
 {

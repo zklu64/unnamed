@@ -1,5 +1,5 @@
 define([], function () {
-    var returnedMob = function (type, start, direction) {
+    function Mob(type, start, direction) {
         this.type = type;
         this.pos = start;
         this.dir = direction;
@@ -7,5 +7,15 @@ define([], function () {
         this.def = 0;
     };
 
-    return returnedMob;
+    Mob.prototype.onDrag = function (mouse) {
+      mouse.selection = this;
+    }
+
+    //every object that can be attached to mouseSelection will have onDrop method
+    Mob.prototype.onDrop = function (mouse) {
+      mouse.selection = null;
+      this.pos = mouse.pos;
+      this.dir = [0, 0]
+    }
+    return Mob;
 });
