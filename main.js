@@ -4,12 +4,14 @@ var mouseState = {
   x : 0,
   y : 0,
   selected : null,
-  clicked : null
+  mouseDown : false,
+  mouseUp : false,
 };
 
 var grass;
 var trash1;
 var path1;
+var turrent1;
 
 var cwidth;
 var cheight;
@@ -37,8 +39,11 @@ function draw() {
     for (let j = 0; j < col; j++) {
       if (mapData[i][j] == '0' || mapData[i][j] == '0\r') {
         drawToGrid(grass, j, i);
-      } else {
+      } else if (typeof mapData[i][j] == "string") {
         drawToGrid(path1, j, i);
+      } else {
+        drawToGrid(grass, j, i);
+        drawToGrid(turrent1, j, i);
       }
     }
   }
@@ -62,13 +67,23 @@ function draw() {
       enemies.splice(i,1);
     }
   };
-
   //handle user interactions
-  if (mouseState.clicked != null) {
-    mapData[Math.floor(mouseState.clicked[1] / heightPerTile)][Math.floor(mouseState.clicked[0] / widthPerTile)] = '0';
-    mouseState.clicked = null;
+  if (mouseState.mouseDown == true) {
+    let temp = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
+    if (typeof temp == "object" && temp != null) {
+      temp.onDrag(mouseState);
+    }
+    mouseState.mouseDown = false;
   }
-
+  if (mouseState.mouseUp == true) {
+    if (typeof mouseState.selected == "object" && mouseState.selected != null) {
+      mapData[Math.floor(mouseState.selected.pos[0] / heightPerTile)][Math.floor(mouseState.selected.pos[1] / widthPerTile)] = '0';
+      mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)] = mouseState.selected;
+      mouseState.selected.onDrop(mouseState);
+    }
+    mouseState.mouseUp = false;
+  }
+  if (mouseState.selected != null) ctx.drawImage(turrent1, mouseState.x - widthPerTile/2, mouseState.y - heightPerTile/2, widthPerTile, heightPerTile);
   requestAnimationFrame(draw);
 }
 
@@ -88,7 +103,7 @@ function parseMapData(){
   col = parseInt(data[0].split(/[ ,]+/)[1]);
   widthPerTile = (cwidth / col);
   heightPerTile = (cheight / row);
-  require(['reIndexOf', 'mob'], function(reIndexOf, mob) {
+  require(['reIndexOf', 'mob', 'turrent'], function(reIndexOf, mob, turrent) {
     for (let i = 1; i <= row; ++i) {
       mapData.push(data[i].split(/[ ,]+/));
       let startTileInd = reIndexOf(mapData[i-1], /s./);
@@ -104,6 +119,9 @@ function parseMapData(){
       let startTileCopy = startTile.slice();
       enemies.push(new mob("tutorial", startTileCopy, startDirection));
     }
+
+    //for testing only, set turrent to a fixed location
+    mapData[2][2] = new turrent("tutorial", [130,130])
     draw();
   });
 }
@@ -127,9 +145,16 @@ window.onload = function()
   //TODO convert to css
   canvas.style = "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto;";
   ctx = canvas.getContext('2d');
-  document.getElementById('canvas').addEventListener('click', function(e) {
-    let pos = getMouse(e);
-    mouseState.clicked = [pos.x, pos.y, 1];
+  document.getElementById('canvas').addEventListener('mousedown', function(e) {
+    mouseState.mouseDown = true;
+  });
+  document.getElementById('canvas').addEventListener('mouseup', function(e) {
+    mouseState.mouseUp = true;
+  });
+  document.getElementById('canvas').addEventListener('mousemove', function(e) {
+    let rect = canvas.getBoundingClientRect();
+    mouseState.x = e.clientX - rect.left;
+    mouseState.y = e.clientY - rect.top;
   });
   grass = new Image();
   grass.src = "assets/grass.png"
@@ -137,18 +162,11 @@ window.onload = function()
   trash1.src = "assets/trash1.png";
   path1 = new Image();
   path1.src = "assets/path.jpg";
+  turrent1 = new Image();
+  turrent1.src = "assets/turrent1.png";
   cwidth = canvas.offsetWidth;
   cheight = canvas.offsetHeight;
   loadLevel(1);
-  window.addEventListener('mousemove', getMouse, false);
-}
-
-function getMouse(e) {
-  let rect = canvas.getBoundingClientRect();
-  return {
-    x: e.clientX - rect.left,
-    y: e.clientY - rect.top
-  };
 }
 
 function printMap(map)

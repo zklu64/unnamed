@@ -1,21 +1,19 @@
 define([], function () {
-    function Mob(type, start, direction) {
+    function Turrent(type, start) {
         this.type = type;
         this.pos = start;
-        this.dir = direction;
         this.health = 100;
         this.def = 0;
     };
 
-    Mob.prototype.onDrag = function (mouse) {
+    Turrent.prototype.onDrag = function (mouse) {
       mouse.selected = this;
     }
 
     //every object that can be attached to mouseSelection will have onDrop method
-    Mob.prototype.onDrop = function (mouse) {
+    Turrent.prototype.onDrop = function (mouse) {
       mouse.selected = null;
       this.pos = [mouse.y, mouse.x];
-      this.dir = [0, 0]
     }
-    return Mob;
+    return Turrent;
 });
