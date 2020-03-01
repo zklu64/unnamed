@@ -1,10 +1,13 @@
 define([], function () {
-    function Turrent(type, enemies, start = [-1, -1]) {
+    function Turrent(type, enemies, start = [-1, -1], interval = 1000) {
         this.type = type;
         this.pos = start;
         this.enemies = enemies; //reference to enemies array for target calculations
         this.power = 10;
         this.target = null;
+        this.rotation = 0;
+        this.interval = interval //attack interval in miliseconds;
+        this.timer = Date.now();
     };
     //every object that can be attached to mouseSelection will have onDrop method
     Turrent.prototype.onDrop = function (start) {
@@ -37,6 +40,10 @@ define([], function () {
         this.findTarget();
       } else if (Math.abs(this.target.pos[0] - this.pos[0]) > 1 || Math.abs(this.target.pos[1] - this.pos[1]) > 1) {
         this.target = null;
+        this.rotation = 0;
+      } else {
+        this.rotation = Math.atan2(-(this.target.pos[0] - this.pos[0]), -(this.target.pos[1] - this.pos[1]));
+        this.target.health -= this.power;
       }
     }
 

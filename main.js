@@ -28,8 +28,33 @@ var turrents = [];
 /*
 abstracted function to draw images to game grid
 */
-function drawToGrid(img, x, y) {
-  ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
+function drawToGrid(img, x, y, rotation = 0, health = -Infinity) {
+  if (rotation != 0) {
+    ctx.save();
+    ctx.translate(widthPerTile*(x + 0.5), heightPerTile*(y + 0.5));
+    ctx.rotate(rotation);
+    ctx.translate(-widthPerTile*(x + 0.5), -heightPerTile*(y + 0.5));
+    ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
+    ctx.restore();
+  } else {
+    ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
+  }
+  if (health != -Infinity) {
+    ctx.beginPath();
+    ctx.lineWidth = "1";
+    ctx.strokeStyle = "white";
+    ctx.rect(widthPerTile*x + 10, heightPerTile*y + 5, widthPerTile-21, 5);
+    ctx.stroke();
+
+    let healthpercentage = health / 100;
+    if (healthpercentage > 0) {
+      ctx.beginPath();
+      ctx.lineWidth = "0";
+      ctx.fillStyle = "red";
+      ctx.fillRect(widthPerTile*x + 11, heightPerTile*y + 6, (widthPerTile-23) * healthpercentage, 3);
+      ctx.stroke();
+    }
+  }
 }
 
 //main loop
@@ -44,13 +69,13 @@ function draw() {
         drawToGrid(path1, j, i);
       } else {
         drawToGrid(grass, j, i);
-        drawToGrid(turrent1, j, i);
+        drawToGrid(turrent1, j, i, mapData[i][j].rotation);
       }
     }
   }
   for (let i = enemies.length - 1; i >= 0; --i) {
     //draw to canvas and update positions
-    drawToGrid(trash1, enemies[i].pos[1], enemies[i].pos[0]);
+    drawToGrid(trash1, enemies[i].pos[1], enemies[i].pos[0], 0, enemies[i].health);
     enemies[i].pos[0] += (enemies[i].dir[0] * 0.1 * i);
     enemies[i].pos[1] += (enemies[i].dir[1] * 0.1 * i);
     enemies[i].pos[0] = Number(enemies[i].pos[0].toPrecision(2));
@@ -68,8 +93,14 @@ function draw() {
       enemies.splice(i,1);
     }
   }
-  turrents.attack();
-  
+  let curTime = Date.now();
+  for (let i = turrents.length - 1; i >= 0; --i) {
+    if (curTime - turrents[i].timer >= turrents[i].interval) {
+      turrents[i].attack();
+      turrents[i].timer = curTime;
+    }
+  }
+
   //handle user interactions
   if (mouseState.mouseDown == true) {
     let temp = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
@@ -129,7 +160,7 @@ function parseMapData(){
 
     //for testing only, set turrent to a fixed location
     mapData[2][2] = new turrent("tutorial", enemies, [2,2]);
-    turrents = mapData[2][2];
+    turrents.push(mapData[2][2]);
     draw();
   });
 }
