@@ -6,11 +6,7 @@ define([], function () {
         this.health = 100;
         this.def = 0;
     };
-
-    Mob.prototype.onDrag = function (mouse) {
-      mouse.selected = this;
-    }
-
+    
     //every object that can be attached to mouseSelection will have onDrop method
     Mob.prototype.onDrop = function (mouse) {
       mouse.selected = null;

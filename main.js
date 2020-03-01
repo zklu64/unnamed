@@ -23,6 +23,7 @@ var mapData = [];
 var startTile;
 var startDirection = [0,0];
 var enemies = [];
+var turrents = [];
 
 /*
 abstracted function to draw images to game grid
@@ -66,20 +67,26 @@ function draw() {
     } else {
       enemies.splice(i,1);
     }
-  };
+  }
+  turrents.attack();
+  
   //handle user interactions
   if (mouseState.mouseDown == true) {
     let temp = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
     if (typeof temp == "object" && temp != null) {
-      temp.onDrag(mouseState);
+      mouseState.selected = temp;
     }
     mouseState.mouseDown = false;
   }
   if (mouseState.mouseUp == true) {
     if (typeof mouseState.selected == "object" && mouseState.selected != null) {
-      mapData[Math.floor(mouseState.selected.pos[0] / heightPerTile)][Math.floor(mouseState.selected.pos[1] / widthPerTile)] = '0';
-      mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)] = mouseState.selected;
-      mouseState.selected.onDrop(mouseState);
+      let targetTile = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
+      if (targetTile == '0' || targetTile == '0\r') {
+        mapData[mouseState.selected.pos[0]][mouseState.selected.pos[1]] = '0';
+        mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)] = mouseState.selected;
+        mouseState.selected.onDrop([Math.floor(mouseState.y / heightPerTile), Math.floor(mouseState.x / widthPerTile)]);
+      }
+      mouseState.selected = null;
     }
     mouseState.mouseUp = false;
   }
@@ -121,7 +128,8 @@ function parseMapData(){
     }
 
     //for testing only, set turrent to a fixed location
-    mapData[2][2] = new turrent("tutorial", [130,130])
+    mapData[2][2] = new turrent("tutorial", enemies, [2,2]);
+    turrents = mapData[2][2];
     draw();
   });
 }
