@@ -8,8 +8,9 @@ var mouseState = {
   mouseUp : false,
 };
 
+//could be array of sprites or just a sprite
 var grass;
-var trash1;
+var trash1 = [];
 var path1;
 var turrent1;
 
@@ -59,70 +60,89 @@ function drawToGrid(img, x, y, rotation = 0, health = -Infinity) {
 
 //main loop
 function draw() {
-  ctx.fillStyle = "white";
-  ctx.fillRect(0, 0, cwidth, cheight);
-  for (let i = 0; i < row; i++) {
-    for (let j = 0; j < col; j++) {
-      if (mapData[i][j] == '0' || mapData[i][j] == '0\r') {
-        drawToGrid(grass, j, i);
-      } else if (typeof mapData[i][j] == "string") {
-        drawToGrid(path1, j, i);
+  setTimeout(function() {
+    ctx.fillStyle = "white";
+    ctx.fillRect(0, 0, cwidth, cheight);
+    for (let i = 0; i < row; i++) {
+      for (let j = 0; j < col; j++) {
+        if (mapData[i][j] == '0' || mapData[i][j] == '0\r') {
+          drawToGrid(grass, j, i);
+        } else if (typeof mapData[i][j] == "string") {
+          drawToGrid(path1, j, i);
+        } else {
+          drawToGrid(grass, j, i);
+          drawToGrid(turrent1, j, i, mapData[i][j].rotation);
+        }
+      }
+    }
+    for (let i = enemies.length - 1; i >= 0; --i) {
+      //draw to canvas and update positions
+      drawFrames(trash1, enemies[i].pos[1], enemies[i].pos[0], 50, 0, enemies[i].health);
+      enemies[i].pos[0] += (enemies[i].dir[0] * 0.1 * i);
+      enemies[i].pos[1] += (enemies[i].dir[1] * 0.1 * i);
+      enemies[i].pos[0] = Number(enemies[i].pos[0].toPrecision(2));
+      enemies[i].pos[1] = Number(enemies[i].pos[1].toPrecision(2));
+
+      //check if mob needs to be removed
+      let ycord = Math.floor(enemies[i].pos[0]);
+      let xcord = Math.floor(enemies[i].pos[1]);
+      if (ycord < row && ycord >= 0 && xcord < col && xcord >= 0) {
+        let dir = mapData[ycord][xcord].match(/[udlr]/);
+        if (dir != null) {
+          enemies[i].dir = mapDirection(dir[0]);
+        }
       } else {
-        drawToGrid(grass, j, i);
-        drawToGrid(turrent1, j, i, mapData[i][j].rotation);
+        enemies.splice(i,1);
       }
     }
-  }
-  for (let i = enemies.length - 1; i >= 0; --i) {
-    //draw to canvas and update positions
-    drawToGrid(trash1, enemies[i].pos[1], enemies[i].pos[0], 0, enemies[i].health);
-    enemies[i].pos[0] += (enemies[i].dir[0] * 0.1 * i);
-    enemies[i].pos[1] += (enemies[i].dir[1] * 0.1 * i);
-    enemies[i].pos[0] = Number(enemies[i].pos[0].toPrecision(2));
-    enemies[i].pos[1] = Number(enemies[i].pos[1].toPrecision(2));
+    let curTime = Date.now();
+    for (let i = turrents.length - 1; i >= 0; --i) {
+      if (curTime - turrents[i].timer >= turrents[i].interval) {
+        turrents[i].attack();
+        turrents[i].timer = curTime;
+      }
+    }
 
-    //check if mob needs to be removed
-    let ycord = Math.floor(enemies[i].pos[0]);
-    let xcord = Math.floor(enemies[i].pos[1]);
-    if (ycord < row && ycord >= 0 && xcord < col && xcord >= 0) {
-      let dir = mapData[ycord][xcord].match(/[udlr]/);
-      if (dir != null) {
-        enemies[i].dir = mapDirection(dir[0]);
+    //handle user interactions
+    if (mouseState.mouseDown == true) {
+      let temp = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
+      if (typeof temp == "object" && temp != null) {
+        mouseState.selected = temp;
       }
-    } else {
-      enemies.splice(i,1);
+      mouseState.mouseDown = false;
     }
-  }
-  let curTime = Date.now();
-  for (let i = turrents.length - 1; i >= 0; --i) {
-    if (curTime - turrents[i].timer >= turrents[i].interval) {
-      turrents[i].attack();
-      turrents[i].timer = curTime;
+    if (mouseState.mouseUp == true) {
+      if (typeof mouseState.selected == "object" && mouseState.selected != null) {
+        let targetTile = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
+        if (targetTile == '0' || targetTile == '0\r') {
+          mapData[mouseState.selected.pos[0]][mouseState.selected.pos[1]] = '0';
+          mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)] = mouseState.selected;
+          mouseState.selected.onDrop([Math.floor(mouseState.y / heightPerTile), Math.floor(mouseState.x / widthPerTile)]);
+        }
+        mouseState.selected = null;
+      }
+      mouseState.mouseUp = false;
     }
-  }
+    if (mouseState.selected != null) ctx.drawImage(turrent1, mouseState.x - widthPerTile/2, mouseState.y - heightPerTile/2, widthPerTile, heightPerTile);
+    requestAnimationFrame(draw);
+  }, 1000 / 60); //can change 60 to whatever new fps
+}
 
-  //handle user interactions
-  if (mouseState.mouseDown == true) {
-    let temp = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
-    if (typeof temp == "object" && temp != null) {
-      mouseState.selected = temp;
-    }
-    mouseState.mouseDown = false;
+function loadFrames(images, filename, frames, extension) {
+  for (let c = 1; c <= frames; ++c) {
+    let temp = new Image();
+    temp.src = filename + c.toString() + extension;
+    images.push(temp);
   }
-  if (mouseState.mouseUp == true) {
-    if (typeof mouseState.selected == "object" && mouseState.selected != null) {
-      let targetTile = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
-      if (targetTile == '0' || targetTile == '0\r') {
-        mapData[mouseState.selected.pos[0]][mouseState.selected.pos[1]] = '0';
-        mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)] = mouseState.selected;
-        mouseState.selected.onDrop([Math.floor(mouseState.y / heightPerTile), Math.floor(mouseState.x / widthPerTile)]);
-      }
-      mouseState.selected = null;
-    }
-    mouseState.mouseUp = false;
-  }
-  if (mouseState.selected != null) ctx.drawImage(turrent1, mouseState.x - widthPerTile/2, mouseState.y - heightPerTile/2, widthPerTile, heightPerTile);
-  requestAnimationFrame(draw);
+}
+
+/*
+animate sprite array according to number of frames and duration (ms)
+*/
+function drawFrames(sprite, x, y, duration, rotation = 0, health = -Infinity) {
+  let mod = duration * sprite.length;
+  let idx = Math.floor((Date.now() % mod) / duration);
+  drawToGrid(sprite[idx], x, y, rotation, health);
 }
 
 //get file from same source directory for stageNum
@@ -134,7 +154,7 @@ function loadLevel(stageNum)
   request.send();
 }
 
-function parseMapData(){
+function parseMapData() {
   mapData = [];
   let data = this.responseText.split("\n");
   row = parseInt(data[0].split(/[ ,]+/)[0]);
@@ -197,8 +217,7 @@ window.onload = function()
   });
   grass = new Image();
   grass.src = "assets/grass.png"
-  trash1 = new Image();
-  trash1.src = "assets/trash1.png";
+  loadFrames(trash1, "assets/chii", 13, ".png");
   path1 = new Image();
   path1.src = "assets/path.jpg";
   turrent1 = new Image();
