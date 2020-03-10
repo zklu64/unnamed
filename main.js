@@ -86,13 +86,13 @@ function draw() {
       //check if mob needs to be removed
       let ycord = Math.floor(enemies[i].pos[0]);
       let xcord = Math.floor(enemies[i].pos[1]);
-      if (ycord < row && ycord >= 0 && xcord < col && xcord >= 0) {
+      if (ycord > row || ycord < 0 || xcord > col || xcord < 0 || enemies[i].health <= 0) {
+        enemies.splice(i,1);
+      } else {
         let dir = mapData[ycord][xcord].match(/[udlr]/);
         if (dir != null) {
           enemies[i].dir = mapDirection(dir[0]);
         }
-      } else {
-        enemies.splice(i,1);
       }
     }
     let curTime = Date.now();
