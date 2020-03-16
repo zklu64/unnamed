@@ -1,5 +1,5 @@
 define([], function () {
-    function Turrent(type, enemies, start = [-1, -1], interval = 1000) {
+    function Turrent(type, enemies, start = [-1, -1], interval = 100) {
         this.type = type;
         this.pos = start;
         this.enemies = enemies; //reference to enemies array for target calculations
@@ -38,12 +38,14 @@ define([], function () {
     Turrent.prototype.attack = function () {
       if (this.target == null) {
         this.findTarget();
-      } else if (Math.abs(this.target.pos[0] - this.pos[0]) > 1 || Math.abs(this.target.pos[1] - this.pos[1]) > 1) {
-        this.target = null;
-        this.rotation = 0;
       } else {
-        this.rotation = Math.atan2(-(this.target.pos[0] - this.pos[0]), -(this.target.pos[1] - this.pos[1]));
-        this.target.health -= this.power;
+        if (Math.abs(this.target.pos[0] - this.pos[0]) > 1 || Math.abs(this.target.pos[1] - this.pos[1]) > 1  || this.target.health <= 0) {
+          this.target = null;
+          this.rotation = 0;
+        } else {
+          this.rotation = Math.atan2(-(this.target.pos[0] - this.pos[0]), -(this.target.pos[1] - this.pos[1]));
+          this.target.health -= this.power;
+        }
       }
     }
 

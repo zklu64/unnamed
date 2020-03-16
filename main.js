@@ -1,8 +1,13 @@
 var canvas;
+var manager;
+var managerCtx;
 var ctx;
+var inventory;
+var invCtx;
 var mouseState = {
   x : 0,
   y : 0,
+  hover: null,
   selected : null,
   mouseDown : false,
   mouseUp : false,
@@ -25,6 +30,7 @@ var startTile;
 var startDirection = [0,0];
 var enemies = [];
 var turrents = [];
+var units = [];
 
 /*
 abstracted function to draw images to game grid
@@ -32,19 +38,20 @@ abstracted function to draw images to game grid
 function drawToGrid(img, x, y, rotation = 0, health = -Infinity) {
   if (rotation != 0) {
     ctx.save();
-    ctx.translate(widthPerTile*(x + 0.5), heightPerTile*(y + 0.5));
+    ctx.translate(heightPerTile*(x + 0.5), heightPerTile*(y + 0.5));
     ctx.rotate(rotation);
-    ctx.translate(-widthPerTile*(x + 0.5), -heightPerTile*(y + 0.5));
-    ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
+    ctx.translate(-heightPerTile*(x + 0.5), -heightPerTile*(y + 0.5));
+    ctx.drawImage(img, heightPerTile*x, heightPerTile*y, heightPerTile-1, heightPerTile-1);
+    //ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
     ctx.restore();
   } else {
-    ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
+    ctx.drawImage(img, heightPerTile*x, heightPerTile*y, heightPerTile-1, heightPerTile-1);
   }
   if (health != -Infinity) {
     ctx.beginPath();
     ctx.lineWidth = "1";
     ctx.strokeStyle = "white";
-    ctx.rect(widthPerTile*x + 10, heightPerTile*y + 5, widthPerTile-21, 5);
+    ctx.rect(heightPerTile*x + 10, heightPerTile*y + 5, heightPerTile-21, 5);
     ctx.stroke();
 
     let healthpercentage = health / 100;
@@ -52,7 +59,7 @@ function drawToGrid(img, x, y, rotation = 0, health = -Infinity) {
       ctx.beginPath();
       ctx.lineWidth = "0";
       ctx.fillStyle = "red";
-      ctx.fillRect(widthPerTile*x + 11, heightPerTile*y + 6, (widthPerTile-23) * healthpercentage, 3);
+      ctx.fillRect(heightPerTile*x + 11, heightPerTile*y + 6, (heightPerTile-23) * healthpercentage, 3);
       ctx.stroke();
     }
   }
@@ -63,6 +70,14 @@ function draw() {
   setTimeout(function() {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, cwidth, cheight);
+    invCtx.fillStyle = "white";
+    invCtx.fillRect(0, 0,  inventory.width, inventory.height);
+    managerCtx.fillStyle = "white";
+    managerCtx.fillRect(0, 0,  manager.width, manager.height);
+    for (let i = units.length - 1; i >= 0; --i) {
+      //console.log(units[i])
+      managerCtx.drawImage(turrent1, units[i].pos[1], units[i].pos[0], heightPerTile, heightPerTile);
+    }
     for (let i = 0; i < row; i++) {
       for (let j = 0; j < col; j++) {
         if (mapData[i][j] == '0' || mapData[i][j] == '0\r') {
@@ -78,15 +93,15 @@ function draw() {
     for (let i = enemies.length - 1; i >= 0; --i) {
       //draw to canvas and update positions
       drawFrames(trash1, enemies[i].pos[1], enemies[i].pos[0], 50, 0, enemies[i].health);
-      enemies[i].pos[0] += (enemies[i].dir[0] * 0.1 * i);
-      enemies[i].pos[1] += (enemies[i].dir[1] * 0.1 * i);
-      enemies[i].pos[0] = Number(enemies[i].pos[0].toPrecision(2));
-      enemies[i].pos[1] = Number(enemies[i].pos[1].toPrecision(2));
+      enemies[i].pos[0] += (enemies[i].dir[0] * enemies[i].speed);
+      enemies[i].pos[1] += (enemies[i].dir[1] * enemies[i].speed);
+      enemies[i].pos[0] = Number(enemies[i].pos[0].toFixed(2));
+      enemies[i].pos[1] = Number(enemies[i].pos[1].toFixed(2));
 
       //check if mob needs to be removed
       let ycord = Math.floor(enemies[i].pos[0]);
       let xcord = Math.floor(enemies[i].pos[1]);
-      if (ycord > row || ycord < 0 || xcord > col || xcord < 0 || enemies[i].health <= 0) {
+      if (ycord >= row || ycord < 0 || xcord >= col || xcord < 0 || enemies[i].health <= 0 ) {
         enemies.splice(i,1);
       } else {
         let dir = mapData[ycord][xcord].match(/[udlr]/);
@@ -102,28 +117,17 @@ function draw() {
         turrents[i].timer = curTime;
       }
     }
-
     //handle user interactions
-    if (mouseState.mouseDown == true) {
-      let temp = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
-      if (typeof temp == "object" && temp != null) {
-        mouseState.selected = temp;
+    if (mouseState.hover == 'manager') {
+      if (mouseState.mouseUp == true) {
+        mouseState.mouseUp = false;
       }
-      mouseState.mouseDown = false;
     }
-    if (mouseState.mouseUp == true) {
-      if (typeof mouseState.selected == "object" && mouseState.selected != null) {
-        let targetTile = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)];
-        if (targetTile == '0' || targetTile == '0\r') {
-          mapData[mouseState.selected.pos[0]][mouseState.selected.pos[1]] = '0';
-          mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / widthPerTile)] = mouseState.selected;
-          mouseState.selected.onDrop([Math.floor(mouseState.y / heightPerTile), Math.floor(mouseState.x / widthPerTile)]);
-        }
-        mouseState.selected = null;
-      }
-      mouseState.mouseUp = false;
+    if (mouseState.selected != null) {
+      if (mouseState.hover == 'canvas') ctx.drawImage(turrent1, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else if (mouseState.hover == 'manager') managerCtx.drawImage(turrent1, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else invCtx.drawImage(turrent1, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
     }
-    if (mouseState.selected != null) ctx.drawImage(turrent1, mouseState.x - widthPerTile/2, mouseState.y - heightPerTile/2, widthPerTile, heightPerTile);
     requestAnimationFrame(draw);
   }, 1000 / 60); //can change 60 to whatever new fps
 }
@@ -159,7 +163,7 @@ function parseMapData() {
   let data = this.responseText.split("\n");
   row = parseInt(data[0].split(/[ ,]+/)[0]);
   col = parseInt(data[0].split(/[ ,]+/)[1]);
-  widthPerTile = (cwidth / col);
+  widthPerTile = (cwidth / col); //vestigial parameter since canvas width now includes sidebars
   heightPerTile = (cheight / row);
   require(['reIndexOf', 'mob', 'turrent'], function(reIndexOf, mob, turrent) {
     for (let i = 1; i <= row; ++i) {
@@ -173,14 +177,16 @@ function parseMapData() {
     }
 
     //setup mobs and shop here before going into draw loop
-    for (let i = 1; i <= 20; ++i) {
+    for (let i = 1; i <= 5; ++i) {
       let startTileCopy = startTile.slice();
-      enemies.push(new mob("tutorial", startTileCopy, startDirection));
+      //generate some randomness to start position
+      let jitter = Math.random() * (0.5 - 0.1) + 0.1;
+      startTileCopy[0] += startDirection[0] * jitter;
+      startTileCopy[1] += startDirection[1] * jitter;
+      enemies.push(new mob("tutorial", startTileCopy, startDirection, 0.01));
     }
-
-    //for testing only, set turrent to a fixed location
-    mapData[2][2] = new turrent("tutorial", enemies, [2,2]);
-    turrents.push(mapData[2][2]);
+    //setup available units to pick in manager
+    units.push(new turrent("tutorial", enemies, [150, 150]));
     draw();
   });
 }
@@ -203,17 +209,73 @@ window.onload = function()
   canvas = document.getElementById('canvas');
   //TODO convert to css
   canvas.style = "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto;";
+  canvas.height = window.innerHeight - 2;
+  canvas.width = window.innerWidth - 741;
+  manager = document.getElementById('manager');
+  manager.style="position: absolute; top:0; right:0; bottom:0;"
+  manager.width = 741 / 2;
+  manager.height = window.innerHeight - 2;
+  inventory = document.getElementById('inventory');
+  inventory.style="position: absolute; top:0; left:0; bottom:0;"
+  inventory.width = 741 / 2;
+  inventory.height = window.innerHeight - 2;
   ctx = canvas.getContext('2d');
-  document.getElementById('canvas').addEventListener('mousedown', function(e) {
-    mouseState.mouseDown = true;
+  managerCtx = manager.getContext('2d');
+  invCtx = inventory.getContext('2d');
+  canvas.addEventListener('mousedown', function(e) {
+    /*
+    let temp = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / heightPerTile)];
+    if (typeof temp == "object" && temp != null) {
+      mouseState.selected = temp;
+    }
+    */
   });
-  document.getElementById('canvas').addEventListener('mouseup', function(e) {
-    mouseState.mouseUp = true;
+  canvas.addEventListener('mouseup', function(e) {
+    if (typeof mouseState.selected == "object" && mouseState.selected != null) {
+      let targetTile = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / heightPerTile)];
+      if (targetTile == '0' || targetTile == '0\r') {
+        //mapData[mouseState.selected.pos[0]][mouseState.selected.pos[1]] = '0';
+        mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / heightPerTile)] = mouseState.selected;
+        turrents.push(mouseState.selected);
+        mouseState.selected.onDrop([Math.floor(mouseState.y / heightPerTile), Math.floor(mouseState.x / heightPerTile)]);
+      }
+      mouseState.selected = null;
+    }
   });
-  document.getElementById('canvas').addEventListener('mousemove', function(e) {
+  canvas.addEventListener('mousemove', function(e) {
     let rect = canvas.getBoundingClientRect();
     mouseState.x = e.clientX - rect.left;
     mouseState.y = e.clientY - rect.top;
+    mouseState.hover = 'canvas';
+  });
+  inventory.addEventListener('mousemove', function(e) {
+    let rect = inventory.getBoundingClientRect();
+    mouseState.x = e.clientX - rect.left;
+    mouseState.y = e.clientY - rect.top;
+    mouseState.hover = 'inv';
+  });
+  inventory.addEventListener('mousedown', function(e) { mouseState.mouseDown = true; });
+  inventory.addEventListener('mouseup', function(e) { mouseState.mouseUp = true; });
+  manager.addEventListener('mousemove', function(e) {
+    let rect = manager.getBoundingClientRect();
+    mouseState.x = e.clientX - rect.left;
+    mouseState.y = e.clientY - rect.top;
+    mouseState.hover = 'manager';
+  });
+  manager.addEventListener('mousedown', function(e) {
+    for (let i = units.length - 1; i >= 0; --i) {
+      if (mouseState.x > units[i].pos[1] && mouseState.y > units[i].pos[0] && mouseState.x <= (units[i].pos[1] + heightPerTile) &&
+      mouseState.y <= (units[i].pos[0] + heightPerTile)) {
+        mouseState.selected = units[i];
+        let posCopy = units[i].pos.slice();
+        require(['turrent'], function(turrent) {
+          units[i] = new turrent("tutorial", enemies, posCopy);
+        });
+      }
+    }
+  });
+  manager.addEventListener('mouseup', function(e) {
+
   });
   grass = new Image();
   grass.src = "assets/grass.png"
