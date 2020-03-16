@@ -165,7 +165,7 @@ function parseMapData() {
   col = parseInt(data[0].split(/[ ,]+/)[1]);
   widthPerTile = (cwidth / col); //vestigial parameter since canvas width now includes sidebars
   heightPerTile = (cheight / row);
-  require(['reIndexOf', 'mob', 'turrent'], function(reIndexOf, mob, turrent) {
+  require(['reIndexOf', 'turrent'], function(reIndexOf, turrent) {
     for (let i = 1; i <= row; ++i) {
       mapData.push(data[i].split(/[ ,]+/));
       let startTileInd = reIndexOf(mapData[i-1], /s./);
@@ -177,17 +177,23 @@ function parseMapData() {
     }
 
     //setup mobs and shop here before going into draw loop
-    for (let i = 1; i <= 5; ++i) {
-      let startTileCopy = startTile.slice();
-      //generate some randomness to start position
-      let jitter = Math.random() * (0.5 - 0.1) + 0.1;
-      startTileCopy[0] += startDirection[0] * jitter;
-      startTileCopy[1] += startDirection[1] * jitter;
-      enemies.push(new mob("tutorial", startTileCopy, startDirection, 0.01));
-    }
+    spawnEnemies(startTile, startDirection, 5)
+
     //setup available units to pick in manager
     units.push(new turrent("tutorial", enemies, [150, 150]));
     draw();
+  });
+}
+
+function spawnEnemies(startTile, direction, amount, types = ["tutorial", "tutorial"]) {
+  require(['mob'], function(mob) {
+    let startTileCopy = startTile.slice();
+    enemies.push(new mob("tutorial", startTileCopy, startDirection, 0.01));
+    if (amount > 1) {
+      setTimeout(function() {
+        spawnEnemies(startTile, direction, --amount, types);
+      }, 500);
+    }
   });
 }
 
