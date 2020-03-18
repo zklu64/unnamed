@@ -17,7 +17,7 @@ var mouseState = {
 var grass;
 var trash1 = [];
 var path1;
-var turrent1;
+var turretMap = {};
 
 var cwidth;
 var cheight;
@@ -76,7 +76,7 @@ function draw() {
     managerCtx.fillRect(0, 0,  manager.width, manager.height);
     for (let i = units.length - 1; i >= 0; --i) {
       //console.log(units[i])
-      managerCtx.drawImage(turrent1, units[i].pos[1], units[i].pos[0], heightPerTile, heightPerTile);
+      managerCtx.drawImage(turretMap[units[i].type], units[i].pos[1], units[i].pos[0], heightPerTile, heightPerTile);
     }
     for (let i = 0; i < row; i++) {
       for (let j = 0; j < col; j++) {
@@ -86,7 +86,7 @@ function draw() {
           drawToGrid(path1, j, i);
         } else {
           drawToGrid(grass, j, i);
-          drawToGrid(turrent1, j, i, mapData[i][j].rotation);
+          drawToGrid(turretMap[mapData[i][j].type], j, i, mapData[i][j].rotation);
         }
       }
     }
@@ -124,9 +124,9 @@ function draw() {
       }
     }
     if (mouseState.selected != null) {
-      if (mouseState.hover == 'canvas') ctx.drawImage(turrent1, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else if (mouseState.hover == 'manager') managerCtx.drawImage(turrent1, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else invCtx.drawImage(turrent1, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      if (mouseState.hover == 'canvas') ctx.drawImage(turretMap[mouseState.selected.type], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else if (mouseState.hover == 'manager') managerCtx.drawImage(turretMap[mouseState.selected.type], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else invCtx.drawImage(turretMap[mouseState.selected.type], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
     }
     requestAnimationFrame(draw);
   }, 1000 / 60); //can change 60 to whatever new fps
@@ -180,7 +180,7 @@ function parseMapData() {
     spawnEnemies(startTile, startDirection, 5)
 
     //setup available units to pick in manager
-    units.push(new turrent("tutorial", enemies, [150, 150]));
+    units.push(new turrent("ninja1", enemies, [150, 150]));
     draw();
   });
 }
@@ -240,7 +240,6 @@ window.onload = function()
     if (typeof mouseState.selected == "object" && mouseState.selected != null) {
       let targetTile = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / heightPerTile)];
       if (targetTile == '0' || targetTile == '0\r') {
-        //mapData[mouseState.selected.pos[0]][mouseState.selected.pos[1]] = '0';
         mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / heightPerTile)] = mouseState.selected;
         turrents.push(mouseState.selected);
         mouseState.selected.onDrop([Math.floor(mouseState.y / heightPerTile), Math.floor(mouseState.x / heightPerTile)]);
@@ -275,21 +274,22 @@ window.onload = function()
         mouseState.selected = units[i];
         let posCopy = units[i].pos.slice();
         require(['turrent'], function(turrent) {
-          units[i] = new turrent("tutorial", enemies, posCopy);
+          units[i] = new turrent("ninja1", enemies, posCopy);
         });
       }
     }
   });
   manager.addEventListener('mouseup', function(e) {
-
+    mouseState.selected = null;
   });
   grass = new Image();
   grass.src = "assets/grass.png"
   loadFrames(trash1, "assets/chii", 13, ".png");
   path1 = new Image();
   path1.src = "assets/path.jpg";
-  turrent1 = new Image();
-  turrent1.src = "assets/turrent1.png";
+  let ninja1 = new Image();
+  ninja1.src = "assets/ninja1.png";
+  turretMap["ninja1"] = ninja1;
   cwidth = canvas.offsetWidth;
   cheight = canvas.offsetHeight;
   loadLevel(1);
