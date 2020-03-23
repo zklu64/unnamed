@@ -17,6 +17,8 @@ var mouseState = {
 var grass;
 var trash1 = [];
 var path1;
+var goldImg;
+var interface;
 var turretMap = {};
 
 var cwidth;
@@ -28,6 +30,7 @@ var heightPerTile;
 var mapData = [];
 var startTile;
 var startDirection = [0,0];
+var gold = 100;
 var enemies = [];
 var turrents = [];
 var units = [];
@@ -72,12 +75,17 @@ function draw() {
     ctx.fillRect(0, 0, cwidth, cheight);
     invCtx.fillStyle = "white";
     invCtx.fillRect(0, 0,  inventory.width, inventory.height);
-    managerCtx.fillStyle = "white";
-    managerCtx.fillRect(0, 0,  manager.width, manager.height);
+
+    //draw right side interface
+    managerCtx.drawImage(interface, 0, 0,  manager.width, manager.height);
     for (let i = units.length - 1; i >= 0; --i) {
-      //console.log(units[i])
       managerCtx.drawImage(turretMap[units[i].type], units[i].pos[1], units[i].pos[0], heightPerTile, heightPerTile);
     }
+    managerCtx.font = "30px Arial";
+    managerCtx.fillStyle = "gold";
+    managerCtx.fillText(gold, 120 + heightPerTile, manager.height - 80);
+    managerCtx.drawImage(goldImg, 120, manager.height - 120, heightPerTile, heightPerTile);
+
     for (let i = 0; i < row; i++) {
       for (let j = 0; j < col; j++) {
         if (mapData[i][j] == '0' || mapData[i][j] == '0\r') {
@@ -101,7 +109,11 @@ function draw() {
       //check if mob needs to be removed
       let ycord = Math.floor(enemies[i].pos[0]);
       let xcord = Math.floor(enemies[i].pos[1]);
-      if (ycord >= row || ycord < 0 || xcord >= col || xcord < 0 || enemies[i].health <= 0 ) {
+      if (ycord >= row || ycord < 0 || xcord >= col || xcord < 0) {
+        enemies.splice(i,1);
+      }
+      else if (enemies[i].health <= 0 ) {
+        gold += enemies[i].loot;
         enemies.splice(i,1);
       } else {
         let dir = mapData[ycord][xcord].match(/[udlr]/);
@@ -239,9 +251,10 @@ window.onload = function()
   canvas.addEventListener('mouseup', function(e) {
     if (typeof mouseState.selected == "object" && mouseState.selected != null) {
       let targetTile = mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / heightPerTile)];
-      if (targetTile == '0' || targetTile == '0\r') {
+      if ((targetTile == '0' || targetTile == '0\r') && gold >= mouseState.selected.cost) {
         mapData[Math.floor(mouseState.y / heightPerTile)][Math.floor(mouseState.x / heightPerTile)] = mouseState.selected;
         turrents.push(mouseState.selected);
+        gold -= mouseState.selected.cost;
         mouseState.selected.onDrop([Math.floor(mouseState.y / heightPerTile), Math.floor(mouseState.x / heightPerTile)]);
       }
       mouseState.selected = null;
@@ -282,11 +295,17 @@ window.onload = function()
   manager.addEventListener('mouseup', function(e) {
     mouseState.selected = null;
   });
+
+  //preload images here
   grass = new Image();
   grass.src = "assets/grass.png"
   loadFrames(trash1, "assets/chii", 13, ".png");
   path1 = new Image();
   path1.src = "assets/path.jpg";
+  goldImg = new Image();
+  goldImg.src = "assets/gold.png";
+  interface = new Image();
+  interface.src = "assets/interface.png";
   let ninja1 = new Image();
   ninja1.src = "assets/ninja1.png";
   turretMap["ninja1"] = ninja1;

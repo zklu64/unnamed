@@ -1,12 +1,17 @@
 define([], function () {
-    function Turrent(type, enemies, start = [-1, -1], interval = 100) {
+    let lookup = {
+      //type of turrent: interval, power, cost TODO:range
+      ninja1: [100, 10, 40]
+    };
+    function Turrent(type, enemies, start = [-1, -1]) {
         this.type = type;
         this.pos = start;
         this.enemies = enemies; //reference to enemies array for target calculations
-        this.power = 10;
         this.target = null;
         this.rotation = 0;
-        this.interval = interval //attack interval in miliseconds;
+        this.interval = lookup[type][0] //attack interval in miliseconds;
+        this.power = lookup[type][1];
+        this.cost = lookup[type][2];
         this.timer = Date.now();
     };
     //every object that can be attached to mouseSelection will have onDrop method
