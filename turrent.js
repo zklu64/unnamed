@@ -1,17 +1,15 @@
-define([], function () {
-    let lookup = {
-      //type of turrent: interval, power, cost TODO:range
-      ninja1: [100, 10, 40]
-    };
+define(['module'], function (module) {
+    let lookup = module.config().lookup;
     function Turrent(type, enemies, start = [-1, -1]) {
         this.type = type;
         this.pos = start;
         this.enemies = enemies; //reference to enemies array for target calculations
         this.target = null;
         this.rotation = 0;
-        this.interval = lookup[type][0] //attack interval in miliseconds;
+        this.interval = lookup[type][0]; //attack interval in miliseconds;
         this.power = lookup[type][1];
         this.cost = lookup[type][2];
+        this.sprite = lookup[type][3];
         this.timer = Date.now();
     };
     //every object that can be attached to mouseSelection will have onDrop method
@@ -40,7 +38,7 @@ define([], function () {
     }
 
     //update function called from main
-    Turrent.prototype.attack = function () {
+    Turrent.prototype.attack = function (projectiles) {
       if (this.target == null) {
         this.findTarget();
       } else {
@@ -49,7 +47,11 @@ define([], function () {
           this.rotation = 0;
         } else {
           this.rotation = Math.atan2(-(this.target.pos[0] - this.pos[0]), -(this.target.pos[1] - this.pos[1]));
-          this.target.health -= this.power;
+          let startTileCopy = this.pos.slice();
+          let context = this;
+          require(['projectile'], function(projectile) {
+            projectiles.push(new projectile("basic", startTileCopy, context.power, context.target));
+          });
         }
       }
     }

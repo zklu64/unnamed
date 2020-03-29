@@ -1,12 +1,15 @@
-define([], function () {
-    function Mob(type, start, direction, speed = 0.1, loot = 5) {
+define(['module'], function (module) {
+    let lookup = module.config().lookup;
+    function Mob(type, start, direction) {
         this.type = type;
         this.pos = start;
         this.dir = direction;
-        this.speed = speed;
         this.health = 100;
-        this.def = 0;
-        this.loot = loot;
+        this.speed = lookup[type][0];
+        this.loot = lookup[type][1];
+        this.attack = lookup[type][2];
+        this.def = lookup[type][3];
+        this.sprite = lookup[type][4];
     };
 
     //every object that can be attached to mouseSelection will have onDrop method

@@ -15,11 +15,9 @@ var mouseState = {
 
 //could be array of sprites or just a sprite
 var grass;
-var trash1 = [];
 var path1;
 var goldImg;
 var interface;
-var turretMap = {};
 
 var cwidth;
 var cheight;
@@ -31,9 +29,41 @@ var mapData = [];
 var startTile;
 var startDirection = [0,0];
 var gold = 100;
+var hp = [600, 600]; //current, max
 var enemies = [];
 var turrents = [];
+var projectiles = []; //keep track of current projectiles created by turrets
 var units = [];
+
+let trash1 = [];
+loadFrames(trash1, "assets/chii", 13, ".png");
+let ninja1 = new Image();
+ninja1.src = "assets/ninja1.png";
+let bullet1 = new Image();
+bullet1.src = "assets/bullet1.png";
+
+requirejs.config({
+    config: {
+        'turrent': {
+            lookup: {
+              //type of turrent: interval, power, cost TODO:range
+              ninja1: [100, 10, 40, ninja1]
+            }
+        },
+        'mob': {
+            lookup: {
+              //type of turrent: speed, loot, attack, defense, sprite
+              tutorial: [0.01, 5, 5, 0, trash1]
+            }
+        },
+        'projectile': {
+            lookup: {
+              //type of bullet: speed, frames, sprite
+              basic: [0.01, 1, bullet1]
+            }
+        }
+    }
+});
 
 /*
 abstracted function to draw images to game grid
@@ -73,18 +103,41 @@ function draw() {
   setTimeout(function() {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, cwidth, cheight);
-    invCtx.fillStyle = "white";
+    invCtx.fillStyle = "hsl(31,22%,60%)"
     invCtx.fillRect(0, 0,  inventory.width, inventory.height);
 
     //draw right side interface
-    managerCtx.drawImage(interface, 0, 0,  manager.width, manager.height);
+    managerCtx.fillStyle = "hsl(31,22%,60%)"
+    managerCtx.fillRect(0, 0,  manager.width, manager.height);
+    //managerCtx.drawImage(interface, 0, 0,  manager.width, manager.height);
     for (let i = units.length - 1; i >= 0; --i) {
-      managerCtx.drawImage(turretMap[units[i].type], units[i].pos[1], units[i].pos[0], heightPerTile, heightPerTile);
+      managerCtx.drawImage(units[i].sprite, units[i].pos[1], units[i].pos[0], heightPerTile, heightPerTile);
     }
-    managerCtx.font = "30px Arial";
+    managerCtx.beginPath();
+    managerCtx.lineWidth = "1";
+    managerCtx.strokeStyle = "white";
+    managerCtx.rect(20, manager.height - 52, Math.min(0.5*hp[1], 250), 15);
+    managerCtx.stroke();
+    let healthpercentage = hp[0] / hp[1];
+    managerCtx.beginPath();
+    managerCtx.lineWidth = "0";
+    managerCtx.fillStyle = "red";
+    managerCtx.fillRect(21, manager.height - 51, Math.min(0.5*hp[1], 250) * healthpercentage - 2, 13);
+    managerCtx.stroke();
+
+    managerCtx.font = "15px Arial";
     managerCtx.fillStyle = "gold";
-    managerCtx.fillText(gold, 120 + heightPerTile, manager.height - 80);
-    managerCtx.drawImage(goldImg, 120, manager.height - 120, heightPerTile, heightPerTile);
+    managerCtx.fillText(gold, 320, manager.height - 40);
+    managerCtx.drawImage(goldImg, 290, manager.height - 60, 30, 30);
+    if (mouseState.selected != null) {
+      managerCtx.fillStyle = "white";
+      managerCtx.fillText("ATK:", 20, manager.height - 80);
+      managerCtx.fillText(mouseState.selected.power, 55, manager.height - 80);
+      managerCtx.fillText("SPD:", 155, manager.height - 80);
+      managerCtx.fillText(1000/mouseState.selected.interval, 192, manager.height - 80);
+      managerCtx.fillText("COST:", 290, manager.height - 80);
+      managerCtx.fillText(mouseState.selected.cost, 340, manager.height - 80);
+    }
 
     for (let i = 0; i < row; i++) {
       for (let j = 0; j < col; j++) {
@@ -94,13 +147,13 @@ function draw() {
           drawToGrid(path1, j, i);
         } else {
           drawToGrid(grass, j, i);
-          drawToGrid(turretMap[mapData[i][j].type], j, i, mapData[i][j].rotation);
+          drawToGrid(mapData[i][j].sprite, j, i, mapData[i][j].rotation);
         }
       }
     }
     for (let i = enemies.length - 1; i >= 0; --i) {
       //draw to canvas and update positions
-      drawFrames(trash1, enemies[i].pos[1], enemies[i].pos[0], 50, 0, enemies[i].health);
+      drawFrames(enemies[i].sprite, enemies[i].pos[1], enemies[i].pos[0], 50, 0, enemies[i].health);
       enemies[i].pos[0] += (enemies[i].dir[0] * enemies[i].speed);
       enemies[i].pos[1] += (enemies[i].dir[1] * enemies[i].speed);
       enemies[i].pos[0] = Number(enemies[i].pos[0].toFixed(2));
@@ -110,6 +163,8 @@ function draw() {
       let ycord = Math.floor(enemies[i].pos[0]);
       let xcord = Math.floor(enemies[i].pos[1]);
       if (ycord >= row || ycord < 0 || xcord >= col || xcord < 0) {
+        hp[0] -= enemies[i].attack;
+        gold -= enemies[i].attack;
         enemies.splice(i,1);
       }
       else if (enemies[i].health <= 0 ) {
@@ -125,9 +180,15 @@ function draw() {
     let curTime = Date.now();
     for (let i = turrents.length - 1; i >= 0; --i) {
       if (curTime - turrents[i].timer >= turrents[i].interval) {
-        turrents[i].attack();
+        turrents[i].attack(projectiles);
         turrents[i].timer = curTime;
       }
+    }
+    for (let i = projectiles.length - 1; i >= 0; --i) {
+      ctx.drawImage(projectiles[i].sprite, heightPerTile*projectiles[i].pos[1], heightPerTile*projectiles[i].pos[0], 20, 20);
+      projectiles[i].chase();        
+      //projectiles[i].pos[0] += (projectiles[i].dir[0] * enemies[i].speed);
+      //projectiles[i].pos[1] += (projectiles[i].dir[1] * enemies[i].speed);
     }
     //handle user interactions
     if (mouseState.hover == 'manager') {
@@ -136,9 +197,9 @@ function draw() {
       }
     }
     if (mouseState.selected != null) {
-      if (mouseState.hover == 'canvas') ctx.drawImage(turretMap[mouseState.selected.type], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else if (mouseState.hover == 'manager') managerCtx.drawImage(turretMap[mouseState.selected.type], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else invCtx.drawImage(turretMap[mouseState.selected.type], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      if (mouseState.hover == 'canvas') ctx.drawImage(mouseState.selected.sprite, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else if (mouseState.hover == 'manager') managerCtx.drawImage(mouseState.selected.sprite, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else invCtx.drawImage(mouseState.selected.sprite, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
     }
     requestAnimationFrame(draw);
   }, 1000 / 60); //can change 60 to whatever new fps
@@ -200,7 +261,7 @@ function parseMapData() {
 function spawnEnemies(startTile, direction, amount, types = ["tutorial", "tutorial"]) {
   require(['mob'], function(mob) {
     let startTileCopy = startTile.slice();
-    enemies.push(new mob("tutorial", startTileCopy, startDirection, 0.01));
+    enemies.push(new mob("tutorial", startTileCopy, startDirection));
     if (amount > 1) {
       setTimeout(function() {
         spawnEnemies(startTile, direction, --amount, types);
@@ -299,16 +360,14 @@ window.onload = function()
   //preload images here
   grass = new Image();
   grass.src = "assets/grass.png"
-  loadFrames(trash1, "assets/chii", 13, ".png");
   path1 = new Image();
   path1.src = "assets/path.jpg";
   goldImg = new Image();
   goldImg.src = "assets/gold.png";
+  bullet1 = new Image();
+  bullet1.src = "assets/bullet1.png";
   interface = new Image();
-  interface.src = "assets/interface.png";
-  let ninja1 = new Image();
-  ninja1.src = "assets/ninja1.png";
-  turretMap["ninja1"] = ninja1;
+  interface.src = "assets/b.png";
   cwidth = canvas.offsetWidth;
   cheight = canvas.offsetHeight;
   loadLevel(1);
