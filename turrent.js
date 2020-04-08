@@ -9,7 +9,8 @@ define(['module'], function (module) {
         this.interval = lookup[type][0]; //attack interval in miliseconds;
         this.power = lookup[type][1];
         this.cost = lookup[type][2];
-        this.sprite = lookup[type][3];
+        this.sprite = lookup[type][4];
+        this.range = lookup[type][3];
         this.timer = Date.now();
     };
     //every object that can be attached to mouseSelection will have onDrop method
@@ -22,7 +23,7 @@ define(['module'], function (module) {
       let closestDist = Infinity;
       let self = this;
       enemies.forEach(function(enemy) {
-        if (Math.abs(enemy.pos[0] - self.pos[0]) <= 1 && Math.abs(enemy.pos[1] - self.pos[1]) <= 1) {
+        if (Math.abs(enemy.pos[0] - self.pos[0]) <= self.range && Math.abs(enemy.pos[1] - self.pos[1]) <= self.range) {
           if (closest == null) {
             closest = enemy;
           } else {
@@ -42,12 +43,17 @@ define(['module'], function (module) {
       if (this.target == null) {
         this.findTarget();
       } else {
-        if (Math.abs(this.target.pos[0] - this.pos[0]) > 1 || Math.abs(this.target.pos[1] - this.pos[1]) > 1  || this.target.health <= 0) {
+        if (Math.abs(this.target.pos[0] - this.pos[0]) > this.range || Math.abs(this.target.pos[1] - this.pos[1]) > this.range  || this.target.health <= 0) {
           this.target = null;
-          this.rotation = 0;
         } else {
           this.rotation = Math.atan2(-(this.target.pos[0] - this.pos[0]), -(this.target.pos[1] - this.pos[1]));
           let startTileCopy = this.pos.slice();
+          //calculate bullet start location w.r.t enemy
+          let temp = [this.target.pos[0] - this.pos[0], this.target.pos[1] - this.pos[1]];
+          let magnitude = 2*Math.sqrt(temp[0] * temp[0] + temp[1] * temp[1]);
+          startTileCopy[0] += (0.5 + temp[0]/magnitude);
+          startTileCopy[1] += (0.5 + temp[1]/magnitude);
+
           let context = this;
           require(['projectile'], function(projectile) {
             projectiles.push(new projectile("basic", startTileCopy, context.power, context.target));

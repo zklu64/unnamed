@@ -29,7 +29,7 @@ var mapData = [];
 var startTile;
 var startDirection = [0,0];
 var gold = 100;
-var hp = [600, 600]; //current, max
+var hp = [100, 100]; //current, max
 var enemies = [];
 var turrents = [];
 var projectiles = []; //keep track of current projectiles created by turrets
@@ -46,8 +46,8 @@ requirejs.config({
     config: {
         'turrent': {
             lookup: {
-              //type of turrent: interval, power, cost TODO:range
-              ninja1: [100, 10, 40, ninja1]
+              //type of turrent: interval, power, cost, range
+              ninja1: [200, 10, 40, 2, ninja1]
             }
         },
         'mob': {
@@ -59,7 +59,7 @@ requirejs.config({
         'projectile': {
             lookup: {
               //type of bullet: speed, frames, sprite
-              basic: [0.01, 1, bullet1]
+              basic: [0.02, 1, bullet1]
             }
         }
     }
@@ -185,10 +185,17 @@ function draw() {
       }
     }
     for (let i = projectiles.length - 1; i >= 0; --i) {
-      ctx.drawImage(projectiles[i].sprite, heightPerTile*projectiles[i].pos[1], heightPerTile*projectiles[i].pos[0], 20, 20);
-      projectiles[i].chase();        
-      //projectiles[i].pos[0] += (projectiles[i].dir[0] * enemies[i].speed);
-      //projectiles[i].pos[1] += (projectiles[i].dir[1] * enemies[i].speed);
+      ctx.save();
+      ctx.translate(heightPerTile*projectiles[i].pos[1], heightPerTile*projectiles[i].pos[0]);
+      ctx.rotate(projectiles[i].rotation);
+      ctx.translate(-heightPerTile*projectiles[i].pos[1], -heightPerTile*projectiles[i].pos[0]);
+      ctx.drawImage(projectiles[i].sprite, heightPerTile*projectiles[i].pos[1]-10,
+        heightPerTile*projectiles[i].pos[0]-10, 20, 20);
+      ctx.restore();
+      projectiles[i].chase(heightPerTile);
+      if (projectiles[i].explode) {
+        projectiles.splice(i,1);
+      }
     }
     //handle user interactions
     if (mouseState.hover == 'manager') {
