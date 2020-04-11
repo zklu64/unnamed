@@ -18,6 +18,7 @@ var grass;
 var path1;
 var goldImg;
 var interface;
+var interface2;
 
 var cwidth;
 var cheight;
@@ -37,8 +38,10 @@ var units = [];
 
 let trash1 = [];
 loadFrames(trash1, "assets/chii", 13, ".png");
-let ninja1 = new Image();
-ninja1.src = "assets/ninja1.png";
+let ninja1 = [];
+loadFrames(ninja1, "assets/ninja", 2, ".png");
+let sumo1 = [];
+loadFrames(sumo1, "assets/sumo", 2, ".png");
 let bullet1 = new Image();
 bullet1.src = "assets/bullet1.png";
 
@@ -47,7 +50,8 @@ requirejs.config({
         'turrent': {
             lookup: {
               //type of turrent: interval, power, cost, range
-              ninja1: [200, 10, 40, 2, ninja1]
+              ninja1: [200, 10, 40, 2, ninja1],
+              sumo1: [1000, 70, 60, 1, sumo1]
             }
         },
         'mob': {
@@ -103,40 +107,56 @@ function draw() {
   setTimeout(function() {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, cwidth, cheight);
+
     invCtx.fillStyle = "hsl(31,22%,60%)"
     invCtx.fillRect(0, 0,  inventory.width, inventory.height);
+    invCtx.drawImage(interface2, 0, 0,  inventory.width, inventory.height);
+    invCtx.fillStyle = "white";
+    invCtx.font = "15px Arial";
+    invCtx.fillText("SHOP", 85, 90);
+    invCtx.fillText("INVENTORY", 62, 403);
 
     //draw right side interface
     managerCtx.fillStyle = "hsl(31,22%,60%)"
     managerCtx.fillRect(0, 0,  manager.width, manager.height);
-    //managerCtx.drawImage(interface, 0, 0,  manager.width, manager.height);
+    managerCtx.drawImage(interface, 0, 0,  manager.width, manager.height);
     for (let i = units.length - 1; i >= 0; --i) {
-      managerCtx.drawImage(units[i].sprite, units[i].pos[1], units[i].pos[0], heightPerTile, heightPerTile);
+      managerCtx.drawImage(units[i].sprite[0], units[i].pos[1], units[i].pos[0], 82, 82.5);
+      managerCtx.beginPath();
+      managerCtx.moveTo(units[i].pos[1]+82, units[i].pos[0]+12.5);
+      managerCtx.lineTo(units[i].pos[1]+82, units[i].pos[0]+70);
+      managerCtx.strokeStyle = "black";
+      managerCtx.stroke();
+      managerCtx.drawImage(units[i].sprite[1], units[i].pos[1]+83,
+        units[i].pos[0], 82, 82.5);
+      //managerCtx.strokeRect(units[i].pos[1], units[i].pos[0], 165, 82.5);
     }
     managerCtx.beginPath();
     managerCtx.lineWidth = "1";
     managerCtx.strokeStyle = "white";
-    managerCtx.rect(20, manager.height - 52, Math.min(0.5*hp[1], 250), 15);
+    managerCtx.rect(20, manager.height - 36, Math.min(0.5*hp[1], 250), 15);
     managerCtx.stroke();
     let healthpercentage = hp[0] / hp[1];
     managerCtx.beginPath();
     managerCtx.lineWidth = "0";
     managerCtx.fillStyle = "red";
-    managerCtx.fillRect(21, manager.height - 51, Math.min(0.5*hp[1], 250) * healthpercentage - 2, 13);
+    managerCtx.fillRect(21, manager.height - 35, Math.min(0.5*hp[1], 250) * healthpercentage - 2, 13);
     managerCtx.stroke();
-
     managerCtx.font = "15px Arial";
     managerCtx.fillStyle = "gold";
-    managerCtx.fillText(gold, 320, manager.height - 40);
-    managerCtx.drawImage(goldImg, 290, manager.height - 60, 30, 30);
+    managerCtx.fillText(gold, 320, manager.height - 24);
+    managerCtx.drawImage(goldImg, 290, manager.height - 44, 30, 30);
+
     if (mouseState.selected != null) {
       managerCtx.fillStyle = "white";
-      managerCtx.fillText("ATK:", 20, manager.height - 80);
-      managerCtx.fillText(mouseState.selected.power, 55, manager.height - 80);
-      managerCtx.fillText("SPD:", 155, manager.height - 80);
-      managerCtx.fillText(1000/mouseState.selected.interval, 192, manager.height - 80);
-      managerCtx.fillText("COST:", 290, manager.height - 80);
-      managerCtx.fillText(mouseState.selected.cost, 340, manager.height - 80);
+      managerCtx.fillText("ATK:", 20, manager.height - 75);
+      managerCtx.fillText(mouseState.selected.power, 55, manager.height - 75);
+      managerCtx.fillText("SPD:", 103, manager.height - 75);
+      managerCtx.fillText(1000/mouseState.selected.interval, 140, manager.height - 75);
+      managerCtx.fillText("RANGE:", 180, manager.height - 75);
+      managerCtx.fillText(mouseState.selected.range, 240, manager.height - 75);
+      managerCtx.fillText("COST:", 280, manager.height - 75);
+      managerCtx.fillText(mouseState.selected.cost, 327, manager.height - 75);
     }
 
     for (let i = 0; i < row; i++) {
@@ -147,7 +167,7 @@ function draw() {
           drawToGrid(path1, j, i);
         } else {
           drawToGrid(grass, j, i);
-          drawToGrid(mapData[i][j].sprite, j, i, mapData[i][j].rotation);
+          drawToGrid(mapData[i][j].sprite[1], j, i, mapData[i][j].rotation);
         }
       }
     }
@@ -204,9 +224,9 @@ function draw() {
       }
     }
     if (mouseState.selected != null) {
-      if (mouseState.hover == 'canvas') ctx.drawImage(mouseState.selected.sprite, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else if (mouseState.hover == 'manager') managerCtx.drawImage(mouseState.selected.sprite, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else invCtx.drawImage(mouseState.selected.sprite, mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      if (mouseState.hover == 'canvas') ctx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else if (mouseState.hover == 'manager') managerCtx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      else invCtx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
     }
     requestAnimationFrame(draw);
   }, 1000 / 60); //can change 60 to whatever new fps
@@ -243,7 +263,7 @@ function parseMapData() {
   let data = this.responseText.split("\n");
   row = parseInt(data[0].split(/[ ,]+/)[0]);
   col = parseInt(data[0].split(/[ ,]+/)[1]);
-  widthPerTile = (cwidth / col); //vestigial parameter since canvas width now includes sidebars
+  widthPerTile = (cwidth / col); //vestigial parameter since canvas same width and height
   heightPerTile = (cheight / row);
   require(['reIndexOf', 'turrent'], function(reIndexOf, turrent) {
     for (let i = 1; i <= row; ++i) {
@@ -260,7 +280,8 @@ function parseMapData() {
     spawnEnemies(startTile, startDirection, 5)
 
     //setup available units to pick in manager
-    units.push(new turrent("ninja1", enemies, [150, 150]));
+    units.push(new turrent("ninja1", enemies, [70, 20]));
+    units.push(new turrent("sumo1", enemies, [70, 20+165]))
     draw();
   });
 }
@@ -340,8 +361,8 @@ window.onload = function()
     mouseState.y = e.clientY - rect.top;
     mouseState.hover = 'inv';
   });
-  inventory.addEventListener('mousedown', function(e) { mouseState.mouseDown = true; });
-  inventory.addEventListener('mouseup', function(e) { mouseState.mouseUp = true; });
+  inventory.addEventListener('mousedown', function(e) { console.log(mouseState.x, mouseState.y); });
+  inventory.addEventListener('mouseup', function(e) { mouseState.selected = null; });
   manager.addEventListener('mousemove', function(e) {
     let rect = manager.getBoundingClientRect();
     mouseState.x = e.clientX - rect.left;
@@ -350,12 +371,12 @@ window.onload = function()
   });
   manager.addEventListener('mousedown', function(e) {
     for (let i = units.length - 1; i >= 0; --i) {
-      if (mouseState.x > units[i].pos[1] && mouseState.y > units[i].pos[0] && mouseState.x <= (units[i].pos[1] + heightPerTile) &&
-      mouseState.y <= (units[i].pos[0] + heightPerTile)) {
+      if (mouseState.x > units[i].pos[1] && mouseState.y > units[i].pos[0] && mouseState.x <= (units[i].pos[1] + 2 * heightPerTile) &&
+      mouseState.y <= (units[i].pos[0] + 2 * heightPerTile)) {
         mouseState.selected = units[i];
         let posCopy = units[i].pos.slice();
         require(['turrent'], function(turrent) {
-          units[i] = new turrent("ninja1", enemies, posCopy);
+          units[i] = new turrent(mouseState.selected.type, enemies, posCopy);
         });
       }
     }
@@ -374,7 +395,9 @@ window.onload = function()
   bullet1 = new Image();
   bullet1.src = "assets/bullet1.png";
   interface = new Image();
-  interface.src = "assets/b.png";
+  interface.src = "assets/interface.png";
+  interface2 = new Image();
+  interface2.src = "assets/inventory.png";
   cwidth = canvas.offsetWidth;
   cheight = canvas.offsetHeight;
   loadLevel(1);
