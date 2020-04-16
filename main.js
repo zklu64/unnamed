@@ -39,7 +39,7 @@ var units = [];
 let trash1 = [];
 loadFrames(trash1, "assets/chii", 13, ".png");
 let ninja1 = [];
-loadFrames(ninja1, "assets/ninja", 2, ".png");
+loadFrames(ninja1, "assets/ninja", 8, ".png");
 let sumo1 = [];
 loadFrames(sumo1, "assets/sumo", 2, ".png");
 let bullet1 = new Image();
@@ -113,50 +113,50 @@ function draw() {
     invCtx.drawImage(interface2, 0, 0,  inventory.width, inventory.height);
     invCtx.fillStyle = "white";
     invCtx.font = "15px Arial";
-    invCtx.fillText("SHOP", 85, 90);
-    invCtx.fillText("INVENTORY", 62, 403);
+    invCtx.fillText("SHOP", 0.23*inventory.width, 0.137*inventory.height);
+    invCtx.fillText("INVENTORY", 0.175*inventory.width, 0.613*inventory.height);
 
     //draw right side interface
     managerCtx.fillStyle = "hsl(31,22%,60%)"
     managerCtx.fillRect(0, 0,  manager.width, manager.height);
     managerCtx.drawImage(interface, 0, 0,  manager.width, manager.height);
     for (let i = units.length - 1; i >= 0; --i) {
-      managerCtx.drawImage(units[i].sprite[0], units[i].pos[1], units[i].pos[0], 82, 82.5);
+      managerCtx.drawImage(units[i].sprite[1], units[i].pos[1], units[i].pos[0], 0.221*manager.width, 0.125*manager.height);
       managerCtx.beginPath();
-      managerCtx.moveTo(units[i].pos[1]+82, units[i].pos[0]+12.5);
-      managerCtx.lineTo(units[i].pos[1]+82, units[i].pos[0]+70);
+      managerCtx.moveTo(units[i].pos[1]+0.221*manager.width, units[i].pos[0]+0.019*manager.height);
+      managerCtx.lineTo(units[i].pos[1]+0.221*manager.width, units[i].pos[0]+0.106*manager.height);
       managerCtx.strokeStyle = "black";
       managerCtx.stroke();
-      managerCtx.drawImage(units[i].sprite[1], units[i].pos[1]+83,
-        units[i].pos[0], 82, 82.5);
+      managerCtx.drawImage(units[i].sprite[0], units[i].pos[1]+0.224*manager.width,
+        units[i].pos[0], 0.221*manager.width, 0.125*manager.height);
       //managerCtx.strokeRect(units[i].pos[1], units[i].pos[0], 165, 82.5);
     }
     managerCtx.beginPath();
     managerCtx.lineWidth = "1";
     managerCtx.strokeStyle = "white";
-    managerCtx.rect(20, manager.height - 36, Math.min(0.5*hp[1], 250), 15);
+    managerCtx.rect(0.054*manager.width, manager.height*0.945, Math.min(0.5*hp[1], manager.width*0.676), 0.023*manager.height);
     managerCtx.stroke();
     let healthpercentage = hp[0] / hp[1];
     managerCtx.beginPath();
     managerCtx.lineWidth = "0";
     managerCtx.fillStyle = "red";
-    managerCtx.fillRect(21, manager.height - 35, Math.min(0.5*hp[1], 250) * healthpercentage - 2, 13);
+    managerCtx.fillRect(0.057*manager.width, manager.height*0.947, Math.min(0.5*hp[1], manager.width*0.676) * healthpercentage - 2, 0.02*manager.height);
     managerCtx.stroke();
     managerCtx.font = "15px Arial";
     managerCtx.fillStyle = "gold";
-    managerCtx.fillText(gold, 320, manager.height - 24);
-    managerCtx.drawImage(goldImg, 290, manager.height - 44, 30, 30);
+    managerCtx.fillText(gold, 0.865*manager.width, manager.height*0.963);
+    managerCtx.drawImage(goldImg, 0.784*manager.width, manager.height*0.933, 0.046*manager.height, 0.046*manager.height);
 
     if (mouseState.selected != null) {
       managerCtx.fillStyle = "white";
-      managerCtx.fillText("ATK:", 20, manager.height - 75);
-      managerCtx.fillText(mouseState.selected.power, 55, manager.height - 75);
-      managerCtx.fillText("SPD:", 103, manager.height - 75);
-      managerCtx.fillText(1000/mouseState.selected.interval, 140, manager.height - 75);
-      managerCtx.fillText("RANGE:", 180, manager.height - 75);
-      managerCtx.fillText(mouseState.selected.range, 240, manager.height - 75);
-      managerCtx.fillText("COST:", 280, manager.height - 75);
-      managerCtx.fillText(mouseState.selected.cost, 327, manager.height - 75);
+      managerCtx.fillText("ATK:", 0.055*manager.width, manager.height*0.886);
+      managerCtx.fillText(mouseState.selected.power, 0.149*manager.width, manager.height*0.886);
+      managerCtx.fillText("SPD:", 0.278*manager.width, manager.height*0.886);
+      managerCtx.fillText(1000/mouseState.selected.interval, 0.378*manager.width, manager.height*0.886);
+      managerCtx.fillText("RANGE:", 0.486*manager.width, manager.height*0.886);
+      managerCtx.fillText(mouseState.selected.range, 0.649*manager.width, manager.height*0.886);
+      managerCtx.fillText("COST:", 0.757*manager.width, manager.height*0.886);
+      managerCtx.fillText(mouseState.selected.cost, 0.884*manager.width, manager.height*0.886);
     }
 
     for (let i = 0; i < row; i++) {
@@ -167,7 +167,7 @@ function draw() {
           drawToGrid(path1, j, i);
         } else {
           drawToGrid(grass, j, i);
-          drawToGrid(mapData[i][j].sprite[1], j, i, mapData[i][j].rotation);
+          drawToGrid(mapData[i][j].sprite[0], j, i, mapData[i][j].rotation);
         }
       }
     }
@@ -197,6 +197,7 @@ function draw() {
         }
       }
     }
+
     let curTime = Date.now();
     for (let i = turrents.length - 1; i >= 0; --i) {
       if (curTime - turrents[i].timer >= turrents[i].interval) {
@@ -224,9 +225,25 @@ function draw() {
       }
     }
     if (mouseState.selected != null) {
-      if (mouseState.hover == 'canvas') ctx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else if (mouseState.hover == 'manager') managerCtx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
-      else invCtx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      if (mouseState.hover == 'canvas') {
+        if (mouseState.selected.sprite.length > 2) {
+          drawFrames(mouseState.selected.sprite, (mouseState.x - heightPerTile/2),
+            (mouseState.y - heightPerTile/2), 100, 0, -Infinity, 2, mouseState.selected.sprite.length-1, ctx);
+        } else {
+          ctx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2,
+            mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+        }
+      } else if (mouseState.hover == 'manager') {
+        if (mouseState.selected.sprite.length > 2) {
+          drawFrames(mouseState.selected.sprite, (mouseState.x - heightPerTile/2),
+            (mouseState.y - heightPerTile/2), 100, 0, -Infinity, 2, mouseState.selected.sprite.length-1, managerCtx);
+        } else {
+          managerCtx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2,
+            mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+        }
+      } else {
+        invCtx.drawImage(mouseState.selected.sprite[1], mouseState.x - heightPerTile/2, mouseState.y - heightPerTile/2, heightPerTile, heightPerTile);
+      }
     }
     requestAnimationFrame(draw);
   }, 1000 / 60); //can change 60 to whatever new fps
@@ -243,10 +260,14 @@ function loadFrames(images, filename, frames, extension) {
 /*
 animate sprite array according to number of frames and duration (ms)
 */
-function drawFrames(sprite, x, y, duration, rotation = 0, health = -Infinity) {
-  let mod = duration * sprite.length;
-  let idx = Math.floor((Date.now() % mod) / duration);
-  drawToGrid(sprite[idx], x, y, rotation, health);
+function drawFrames(sprite, x, y, duration, rotation = 0, health = -Infinity, start = -1, end = -1, context = null) {
+  let mod = duration * (start == -1 ? sprite.length : (end-start+1)); //total miliseconds
+  let idx = Math.floor((Date.now() % mod) / duration) + (start == -1 ? 0 : start);
+  if (context != null) {
+    context.drawImage(sprite[idx], x, y, heightPerTile, heightPerTile);
+  } else {
+    drawToGrid(sprite[idx], x, y, rotation, health);
+  }
 }
 
 //get file from same source directory for stageNum
@@ -280,8 +301,8 @@ function parseMapData() {
     spawnEnemies(startTile, startDirection, 5)
 
     //setup available units to pick in manager
-    units.push(new turrent("ninja1", enemies, [70, 20]));
-    units.push(new turrent("sumo1", enemies, [70, 20+165]))
+    units.push(new turrent("ninja1", enemies, [0.189*manager.width, 0.03*manager.height]));
+    units.push(new turrent("sumo1", enemies, [0.189*manager.width, 0.281*manager.height]))
     draw();
   });
 }
@@ -317,15 +338,15 @@ window.onload = function()
   //TODO convert to css
   canvas.style = "position: absolute; top: 0px; left: 0px; right: 0px; bottom: 0px; margin: auto;";
   canvas.height = window.innerHeight - 2;
-  canvas.width = window.innerWidth - 741;
+  canvas.width = window.innerWidth*0.47;
   manager = document.getElementById('manager');
   manager.style="position: absolute; top:0; right:0; bottom:0;"
-  manager.width = 741 / 2;
-  manager.height = window.innerHeight - 2;
+  manager.width = window.innerWidth*0.53 / 2 + 1;
+  manager.height = window.innerHeight;
   inventory = document.getElementById('inventory');
   inventory.style="position: absolute; top:0; left:0; bottom:0;"
-  inventory.width = 741 / 2;
-  inventory.height = window.innerHeight - 2;
+  inventory.width = window.innerWidth*0.53 / 2 - 1;
+  inventory.height = window.innerHeight;
   ctx = canvas.getContext('2d');
   managerCtx = manager.getContext('2d');
   invCtx = inventory.getContext('2d');
