@@ -1,9 +1,10 @@
 var canvas;
+var ctx;
 var manager;
 var managerCtx;
-var ctx;
 var inventory;
 var invCtx;
+var invSelected = false;
 var mouseState = {
   x : 0,
   y : 0,
@@ -19,6 +20,7 @@ var path1;
 var goldImg;
 var interface;
 var interface2;
+var interface3;
 
 var cwidth;
 var cheight;
@@ -41,7 +43,7 @@ loadFrames(trash1, "assets/chii", 13, ".png");
 let ninja1 = [];
 loadFrames(ninja1, "assets/ninja", 8, ".png");
 let sumo1 = [];
-loadFrames(sumo1, "assets/sumo", 2, ".png");
+loadFrames(sumo1, "assets/sumo", 8, ".png");
 let bullet1 = new Image();
 bullet1.src = "assets/bullet1.png";
 
@@ -108,13 +110,21 @@ function draw() {
     ctx.fillStyle = "white";
     ctx.fillRect(0, 0, cwidth, cheight);
 
+    //draw left side interface
     invCtx.fillStyle = "hsl(31,22%,60%)"
     invCtx.fillRect(0, 0,  inventory.width, inventory.height);
-    invCtx.drawImage(interface2, 0, 0,  inventory.width, inventory.height);
     invCtx.fillStyle = "white";
     invCtx.font = "15px Arial";
-    invCtx.fillText("SHOP", 0.23*inventory.width, 0.137*inventory.height);
-    invCtx.fillText("INVENTORY", 0.175*inventory.width, 0.613*inventory.height);
+    if (invSelected) {
+      invCtx.drawImage(interface3, 0, 0,  inventory.width, inventory.height);
+
+    } else {
+      invCtx.drawImage(interface2, 0, 0,  inventory.width, inventory.height);
+      invCtx.fillText("SHOP", 0.23*inventory.width, 0.137*inventory.height);
+      invCtx.fillText("INVENTORY", 0.175*inventory.width, 0.613*inventory.height);
+    }
+    invCtx.fillText("ITEMS", 0.68*inventory.width, 0.039*inventory.height);
+    invCtx.fillText("INTEL", 0.22*inventory.width, 0.039*inventory.height);
 
     //draw right side interface
     managerCtx.fillStyle = "hsl(31,22%,60%)"
@@ -419,6 +429,8 @@ window.onload = function()
   interface.src = "assets/interface.png";
   interface2 = new Image();
   interface2.src = "assets/inventory.png";
+  interface3 = new Image();
+  interface3.src = "assets/stageinfo.png";
   cwidth = canvas.offsetWidth;
   cheight = canvas.offsetHeight;
   loadLevel(1);
