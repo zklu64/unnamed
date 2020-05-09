@@ -18,5 +18,21 @@ define(['module'], function (module) {
       this.pos = [mouse.y, mouse.x];
       this.dir = [0, 0]
     }
+
+    Mob.prototype.nearby = function (enemies, dist) {
+      let nearby = [];
+      let self = this;
+      enemies.forEach(function(enemy) {
+        if (enemy != self) {
+          let delta = Math.sqrt(Math.pow(Math.abs(enemy.pos[0] - self.pos[0]),2) + Math.pow(Math.abs(enemy.pos[1] - self.pos[1]), 2));
+          console.log(delta);
+          if (delta < dist) {
+            nearby.push(enemy);
+          }
+        }
+      });
+      return nearby;
+    }
+
     return Mob;
 });

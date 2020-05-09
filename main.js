@@ -392,7 +392,12 @@ window.onload = function()
     mouseState.y = e.clientY - rect.top;
     mouseState.hover = 'inv';
   });
-  inventory.addEventListener('mousedown', function(e) { console.log(mouseState.x, mouseState.y); });
+  inventory.addEventListener('mousedown', function(e) {
+    console.log(mouseState.x, mouseState.y);
+    if (mouseState.y <= 30) {
+      invSelected = !invSelected;
+    }
+  });
   inventory.addEventListener('mouseup', function(e) { mouseState.selected = null; });
   manager.addEventListener('mousemove', function(e) {
     let rect = manager.getBoundingClientRect();
