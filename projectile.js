@@ -1,6 +1,6 @@
 define(['module'], function (module) {
     let lookup = module.config().lookup;
-    function Projectile(type, start, power, target) {
+    function Projectile(type, start, power, target, aoe) {
         this.type = type;
         this.pos = start;
         this.speed = lookup[type][0];
@@ -10,6 +10,7 @@ define(['module'], function (module) {
         this.explode = false;
         this.timer = Date.now();
         this.target = target;
+        this.aoe = aoe;
         this.rotation = 0;
         let temp = [target.pos[0]+0.5 -start[0], target.pos[1]+0.5 -start[1]];
         let magnitude = Math.sqrt(temp[0] * temp[0] + temp[1] * temp[1]);

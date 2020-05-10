@@ -9,8 +9,9 @@ define(['module'], function (module) {
         this.interval = lookup[type][0]; //attack interval in miliseconds;
         this.power = lookup[type][1];
         this.cost = lookup[type][2];
-        this.sprite = lookup[type][4];
         this.range = lookup[type][3];
+        this.aoe = lookup[type][4];
+        this.sprite = lookup[type][5];
         this.timer = Date.now();
     };
     //every object that can be attached to mouseSelection will have onDrop method
@@ -56,7 +57,7 @@ define(['module'], function (module) {
 
           let context = this;
           require(['projectile'], function(projectile) {
-            projectiles.push(new projectile("basic", startTileCopy, context.power, context.target));
+            projectiles.push(new projectile("basic", startTileCopy, context.power, context.target, context.aoe));
           });
         }
       }

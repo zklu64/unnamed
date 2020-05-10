@@ -25,7 +25,6 @@ define(['module'], function (module) {
       enemies.forEach(function(enemy) {
         if (enemy != self) {
           let delta = Math.sqrt(Math.pow(Math.abs(enemy.pos[0] - self.pos[0]),2) + Math.pow(Math.abs(enemy.pos[1] - self.pos[1]), 2));
-          console.log(delta);
           if (delta < dist) {
             nearby.push(enemy);
           }

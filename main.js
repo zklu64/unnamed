@@ -52,8 +52,8 @@ requirejs.config({
         'turrent': {
             lookup: {
               //type of turrent: interval, power, cost, range
-              ninja1: [200, 10, 40, 2, ninja1],
-              sumo1: [1000, 70, 60, 1, sumo1]
+              ninja1: [200, 10, 40, 2, 0, ninja1],
+              sumo1: [1000, 70, 60, 1, 0.5, sumo1]
             }
         },
         'mob': {
@@ -225,6 +225,12 @@ function draw() {
       ctx.restore();
       projectiles[i].chase(heightPerTile);
       if (projectiles[i].explode) {
+        if (projectiles[i].aoe > 0) {
+          let nearby = projectiles[i].target.nearby(enemies, projectiles[i].aoe);
+          nearby.forEach(function(near) {
+            near.health -= projectiles[i].power/2;
+          });
+        }
         projectiles.splice(i,1);
       }
     }
