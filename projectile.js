@@ -3,9 +3,8 @@ define(['module'], function (module) {
     function Projectile(type, start, power, target, aoe) {
         this.type = type;
         this.pos = start;
-        this.speed = lookup[type][0];
         this.frames = lookup[type][1];
-        this.sprite = lookup[type][2];
+        this.sprite = lookup[type][0];
         this.power = power;
         this.explode = false;
         this.timer = Date.now();
@@ -19,8 +18,8 @@ define(['module'], function (module) {
     };
 
     Projectile.prototype.chase = function (enemySize) {
-      this.pos[0] += (this.dir[0] * this.speed);
-      this.pos[1] += (this.dir[1] * this.speed);
+      this.pos[0] += (this.dir[0] * (this.target.speed*2));
+      this.pos[1] += (this.dir[1] * (this.target.speed*2));
       this.pos[0] = Number(this.pos[0].toFixed(3));
       this.pos[1] = Number(this.pos[1].toFixed(3));
       //we hit target, time to prep for deletion

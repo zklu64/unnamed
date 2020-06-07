@@ -26,9 +26,10 @@ var cwidth;
 var cheight;
 var row; //how many tiles in a row, determined by level
 var col; //how many tiles in a column
-var widthPerTile;
+var rushStage; //if currently loaded stage is rush or defense
 var heightPerTile;
 var mapData = [];
+var spawnOrder = [];
 var startTile;
 var startDirection = [0,0];
 var gold = 100;
@@ -51,21 +52,21 @@ requirejs.config({
     config: {
         'turrent': {
             lookup: {
-              //type of turrent: interval, power, cost, range
+              //type of turrent: interval, power, cost, range, aoe-range
               ninja1: [200, 10, 40, 2, 0, ninja1],
               sumo1: [1000, 70, 60, 1, 0.5, sumo1]
             }
         },
         'mob': {
-            lookup: {
-              //type of turrent: speed, loot, attack, defense, sprite
-              tutorial: [0.01, 5, 5, 0, trash1]
-            }
+            lookup: [
+              //type of turrent: speed, loot, attack, defense, sprite, speed must evenly divide 1.0
+              [0.02, 5, 5, 0, trash1, "tutorial"],
+              [0.04, 10, 20, 30, trash1, "squire"]]
         },
         'projectile': {
             lookup: {
               //type of bullet: speed, frames, sprite
-              basic: [0.02, 1, bullet1]
+              basic: [bullet1, 1]
             }
         }
     }
@@ -81,7 +82,6 @@ function drawToGrid(img, x, y, rotation = 0, health = -Infinity) {
     ctx.rotate(rotation);
     ctx.translate(-heightPerTile*(x + 0.5), -heightPerTile*(y + 0.5));
     ctx.drawImage(img, heightPerTile*x, heightPerTile*y, heightPerTile-1, heightPerTile-1);
-    //ctx.drawImage(img, widthPerTile*x, heightPerTile*y, widthPerTile-1, heightPerTile-1);
     ctx.restore();
   } else {
     ctx.drawImage(img, heightPerTile*x, heightPerTile*y, heightPerTile-1, heightPerTile-1);
@@ -111,7 +111,7 @@ function draw() {
     ctx.fillRect(0, 0, cwidth, cheight);
 
     //draw left side interface
-    invCtx.fillStyle = "hsl(31,22%,60%)"
+    invCtx.fillStyle = "hsl(31,22%,60%)";
     invCtx.fillRect(0, 0,  inventory.width, inventory.height);
     invCtx.fillStyle = "white";
     invCtx.font = "15px Arial";
@@ -127,7 +127,7 @@ function draw() {
     invCtx.fillText("INTEL", 0.22*inventory.width, 0.039*inventory.height);
 
     //draw right side interface
-    managerCtx.fillStyle = "hsl(31,22%,60%)"
+    managerCtx.fillStyle = "hsl(31,22%,60%)";
     managerCtx.fillRect(0, 0,  manager.width, manager.height);
     managerCtx.drawImage(interface, 0, 0,  manager.width, manager.height);
     for (let i = units.length - 1; i >= 0; --i) {
@@ -188,19 +188,17 @@ function draw() {
       enemies[i].pos[1] += (enemies[i].dir[1] * enemies[i].speed);
       enemies[i].pos[0] = Number(enemies[i].pos[0].toFixed(2));
       enemies[i].pos[1] = Number(enemies[i].pos[1].toFixed(2));
-
       //check if mob needs to be removed
-      let ycord = Math.floor(enemies[i].pos[0]);
-      let xcord = Math.floor(enemies[i].pos[1]);
+      let ycord = enemies[i].pos[0];
+      let xcord = enemies[i].pos[1];
       if (ycord >= row || ycord < 0 || xcord >= col || xcord < 0) {
         hp[0] -= enemies[i].attack;
         gold -= enemies[i].attack;
         enemies.splice(i,1);
-      }
-      else if (enemies[i].health <= 0 ) {
+      } else if (enemies[i].health <= 0 ) {
         gold += enemies[i].loot;
         enemies.splice(i,1);
-      } else {
+      } else if (ycord % 1 == 0 && xcord % 1 == 0) {
         let dir = mapData[ycord][xcord].match(/[udlr]/);
         if (dir != null) {
           enemies[i].dir = mapDirection(dir[0]);
@@ -227,8 +225,9 @@ function draw() {
       if (projectiles[i].explode) {
         if (projectiles[i].aoe > 0) {
           let nearby = projectiles[i].target.nearby(enemies, projectiles[i].aoe);
+          let power = projectiles[i].power;
           nearby.forEach(function(near) {
-            near.health -= projectiles[i].power/2;
+            near.health -= power/2;
           });
         }
         projectiles.splice(i,1);
@@ -297,10 +296,11 @@ function loadLevel(stageNum)
 
 function parseMapData() {
   mapData = [];
-  let data = this.responseText.split("\n");
-  row = parseInt(data[0].split(/[ ,]+/)[0]);
-  col = parseInt(data[0].split(/[ ,]+/)[1]);
-  widthPerTile = (cwidth / col); //vestigial parameter since canvas same width and height
+  let data = this.responseText.split(/\r?\n/);
+  let firstline = data[0].split(/[ ,]+/);
+  row = parseInt(firstline[0]);
+  col = parseInt(firstline[1]);
+  rushStage = (firstline[2] == 'r');
   heightPerTile = (cheight / row);
   require(['reIndexOf', 'turrent'], function(reIndexOf, turrent) {
     for (let i = 1; i <= row; ++i) {
@@ -313,8 +313,13 @@ function parseMapData() {
       }
     }
 
+
     //setup mobs and shop here before going into draw loop
-    spawnEnemies(startTile, startDirection, 5)
+    if (!rushStage) {
+      let amt = firstline[2];
+      [,,, ...spawnOrder] = firstline;
+      spawnEnemies(startTile, startDirection, amt, spawnOrder);
+    }
 
     //setup available units to pick in manager
     units.push(new turrent("ninja1", enemies, [0.189*manager.width, 0.03*manager.height]));
@@ -323,10 +328,11 @@ function parseMapData() {
   });
 }
 
-function spawnEnemies(startTile, direction, amount, types = ["tutorial", "tutorial"]) {
+function spawnEnemies(startTile, direction, amount, types) {
   require(['mob'], function(mob) {
     let startTileCopy = startTile.slice();
-    enemies.push(new mob("tutorial", startTileCopy, startDirection));
+    enemies.push(new mob(types[0], startTileCopy, startDirection));
+    types.shift();
     if (amount > 1) {
       setTimeout(function() {
         spawnEnemies(startTile, direction, --amount, types);
@@ -429,7 +435,7 @@ window.onload = function()
 
   //preload images here
   grass = new Image();
-  grass.src = "assets/grass.png"
+  grass.src = "assets/grass.png";
   path1 = new Image();
   path1.src = "assets/path.jpg";
   goldImg = new Image();
@@ -445,7 +451,7 @@ window.onload = function()
   cwidth = canvas.offsetWidth;
   cheight = canvas.offsetHeight;
   loadLevel(1);
-}
+};
 
 function printMap(map)
 {

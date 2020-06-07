@@ -5,7 +5,7 @@ define(['module'], function (module) {
         this.pos = start;
         this.dir = direction;
         this.health = 100;
-        this.speed = lookup[type][0];
+        this.speed = Math.round(lookup[type][0]/0.02)*0.02;
         this.loot = lookup[type][1];
         this.attack = lookup[type][2];
         this.def = lookup[type][3];
